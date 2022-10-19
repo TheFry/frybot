@@ -17,6 +17,6 @@ async function execute(interaction) {
 
 const command = new SlashCommandBuilder()
   .setName('stop-yt')
-  .setDescription('Stop sassy from singing')
+  .setDescription('Stop music player')
 
 module.exports = { data: command, execute };

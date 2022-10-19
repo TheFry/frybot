@@ -1,5 +1,5 @@
 #!/bin/bash
-APP="sassy-bot"
+APP="frybot"
 TAG="$(date +%Y-%m-%d_%H.%M.%S)"
 REG="docker-reg.service.consul:5000"
 PUSH="${PUSH:-0}"
