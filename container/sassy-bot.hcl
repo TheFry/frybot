@@ -30,7 +30,7 @@ job "sassy-bot" {
       }
 
       service {
-        name = "certbot"
+        name = "sassy-bot"
         tags = [
           "urlprefix-sassy-bot.service.consul/",
         ]
