@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const { activePlayer } = require('../state');
 const yt = require('../youtube');
 const {  VoiceConnectionStatus, 
+         AudioPlayerStatus,
          joinVoiceChannel,
          createAudioPlayer,
          createAudioResource,
@@ -37,6 +38,15 @@ async function playAudio(interaction, source) {
     activePlayer.player.play(activePlayer.resource);
     connection.subscribe(activePlayer.player);
   });
+
+  connection.on(AudioPlayerStatus.Idle, () => {
+    console.log('Done playing audio');
+    activePlayer.player.stop();
+    activePlayer.player = null;
+    activePlayer.resource = null;
+    activePlayer.source = null;
+    connection.destroy();
+  })
 }
 
 async function execute(interaction) {
@@ -58,7 +68,7 @@ async function execute(interaction) {
 
 const command = new SlashCommandBuilder()
   .setName('play-yt')
-  .setDescription('Add a song to the geeb bot queue')
+  .setDescription('Play a song')
   .addStringOption(option => 
     option.setName('query')
       .setDescription('The song to search for')
