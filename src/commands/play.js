@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { guildList } = require('../state');
-const yt = require('../youtube');
+const { guildList } = require('../helpers/state');
+const yt = require('../helpers/youtube');
 
 const YT_TOKEN = process.env['YT_TOKEN'];
 

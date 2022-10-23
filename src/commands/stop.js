@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { guildList } = require('../state');
+const { guildList } = require('../helpers/state');
 
 async function execute(interaction) {
   await interaction.reply({ content: "Stopping and clearing queue..." });

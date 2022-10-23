@@ -1,4 +1,4 @@
-const loadCommands = require('./load-commands');
+const loadCommands = require('./helpers/load-commands');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 // Check that all required env vars exist. We don't necessarily use them
 // in this file (like YT_TOKEN and mongo credentials), but we don't start if they don't exist

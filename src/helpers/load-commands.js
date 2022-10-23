@@ -6,7 +6,7 @@ const DEPLOY = process.env['DEPLOY'] ? true : false;
 const DELETE = process.env['DELETE'] ? true : false;
 
 exports.load = async function(client, token, clientID, guildID) {
-  const commandsPath = path.join(__dirname, 'commands');
+  const commandsPath = path.join(__dirname, '../commands');
   const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
   const rest = new REST({ version: '10' }).setToken(token);
   const commands = [];
