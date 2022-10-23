@@ -1,18 +1,10 @@
 const { SlashCommandBuilder } = require('discord.js');
-const {  getVoiceConnection } = require('@discordjs/voice');
-const { activePlayer } = require('../state');
+const { guildList } = require('../state');
 
 async function execute(interaction) {
-  await interaction.reply({ content: "Stopping...", ephemeral: true });
-  const conn = getVoiceConnection(interaction.member.guild.id);
-  if(conn) conn.destroy();
-  if(activePlayer.player) {
-    activePlayer.player.stop();
-    activePlayer.player = null;
-    activePlayer.resource = null;
-    activePlayer.source = null;
-  }
-  await interaction.editReply(`Audio Stopped`);
+  await interaction.reply({ content: "Stopping and clearing queue..." });
+  guildList.cleanup(interaction.member.guild.id);
+  await interaction.editReply(`Queue cleared`);
 }
 
 const command = new SlashCommandBuilder()

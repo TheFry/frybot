@@ -1,69 +1,33 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { activePlayer } = require('../state');
+const { guildList } = require('../state');
 const yt = require('../youtube');
-const {  VoiceConnectionStatus, 
-         AudioPlayerStatus,
-         joinVoiceChannel,
-         createAudioPlayer,
-         createAudioResource,
-         NoSubscriberBehavior } = require('@discordjs/voice');
 
 const YT_TOKEN = process.env['YT_TOKEN'];
 
-async function playAudio(interaction, source) {
+async function execute(interaction) {
+  const q = interaction.options.getString('query');
+  await interaction.reply({ content: `Searcing youtube for ${q}`});
   const channelId = interaction.member.voice.channel.id;
   const channelName = interaction.member.voice.channel.name;
   const guildId = interaction.member.guild.id;
+  let searchData = null;
 
-  const connection = joinVoiceChannel({
-    channelId: `${channelId}`,
-    guildId: `${guildId}`,
-    adapterCreator: interaction.member.guild.voiceAdapterCreator
-  });
-
-  if(activePlayer.player) {
-    return null;
-  }
-
-  activePlayer.player = createAudioPlayer({
-    behaviors: {
-      noSubscriber: NoSubscriberBehavior.Pause,
-    },
-  });
-  activePlayer.source = source;
-  activePlayer.resource = createAudioResource(source);
-  
-  connection.on(VoiceConnectionStatus.Ready, () => {
-    console.log('Connection is in the Ready state!');
-    activePlayer.player.play(activePlayer.resource);
-    connection.subscribe(activePlayer.player);
-  });
-
-  connection.on(AudioPlayerStatus.Idle, () => {
-    console.log('Done playing audio');
-    activePlayer.player.stop();
-    activePlayer.player = null;
-    activePlayer.resource = null;
-    activePlayer.source = null;
-    connection.destroy();
-  })
-}
-
-async function execute(interaction) {
-  await interaction.reply({ content: "loading", ephemeral: true });
-  const q = interaction.options.getString('query');
-  let searchData = await yt.search(q, 5, YT_TOKEN);
-  let songData = await(yt.download(searchData[0].id));
-  if(songData === null) {
-    await interaction.editReply('Failed to load youtube audio');
-    throw err('Failed to load youtube audio')
-  }
-  try{
-    await playAudio(interaction, songData);
+  try {
+    searchData = await yt.search(q, 5, YT_TOKEN);
+    if(searchData === null) {
+      await interaction.editReply('Failed to query youtube');
+      throw err('Failed to load youtube audio');
+    }
+    if(!guildList.activeGuilds[`${guildId}`]) {
+      console.log('Have to init guild');
+      await guildList.initGuild(guildId, channelId, interaction);
+    }
+    guildList.addSong(guildId, searchData[0].name, searchData[0].id);
+    console.log(guildList.activeGuilds[`${guildId}`].queue);
   } catch(err) {
     throw err;
   }
-  await interaction.editReply(`Playing ${searchData[0].name}`);
+  await interaction.editReply(`Added ${searchData[0].name} to queue`);
 }
 
 const command = new SlashCommandBuilder()
