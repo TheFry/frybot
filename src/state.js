@@ -7,16 +7,8 @@ const { createAudioPlayer,
         joinVoiceChannel,
         VoiceConnectionStatus, 
         entersState} = require('@discordjs/voice');
-const { ModalSubmitFields } = require('discord.js');
 
-
-exports.activePlayer = {
-  player: null,
-  resource: null,
-  source: null,
-}
-
-
+        
 const GuildQueues = function() {
   // Queue data. Designed to work with multiple guilds
   // Each player's key should be a string of guildID
