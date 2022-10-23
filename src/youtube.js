@@ -31,7 +31,7 @@ exports.search = async function(query, count, key) {
 }
 
 
-exports.download = async function(id) {
+exports.download = function(id) {
   const download = ytdl(id, { filter: 'audioonly' });
   const buff = [];
   return download;
