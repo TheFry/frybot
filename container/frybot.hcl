@@ -30,7 +30,7 @@ job "frybot" {
       }
 
       service {
-        name = "certbot"
+        name = "frybot"
         tags = [
           "urlprefix-frybot.service.consul/",
         ]
