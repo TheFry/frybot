@@ -1,13 +1,12 @@
 const loadCommands = require('./load-commands');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
-
 // Check that all required env vars exist. We don't necessarily use them
 // in this file (like YT_TOKEN and mongo credentials), but we don't start if they don't exist
 const DC_TOKEN = process.env['DC_TOKEN'] || usage(); 
 const DC_CLIENT = process.env['DC_CLIENT'] || usage();
 const YT_TOKEN = process.env['YT_TOKEN'] || usage();
 const G_ID = process.env['G_ID'] || usage();
-const MONGO_CONN_STRING = process.env['MONGO_CONN_STRING'] || usage();
+// const MONGO_CONN_STRING = process.env['MONGO_CONN_STRING'] || usage();
 
 
 function usage() {
