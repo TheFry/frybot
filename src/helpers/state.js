@@ -13,9 +13,8 @@ const GuildQueues = function() {
   // Queue data. Designed to work with multiple guilds
   // Each player's key should be a string of guildID
   // Note that discordjs voice connections are not stored.
-  // There is only one connection available per guild, so 
-  // we let the library keep track of it for us with the getVoiceConnection function
-  // youtubeId and song name persist to storage if enabled
+  // The library handles that for us.
+  // youtubeId and song name persist to storage if enabled (not implemented yet)
   this.activeGuilds = {
     _default: {
       player: null,
@@ -33,6 +32,8 @@ const GuildQueues = function() {
   }
 
 
+  // add an entry in activeGuilds with guildId as the key
+  // Follows same format of _default
   this.initGuild = async function(guildId, channelId, interaction) {
     // init voice connection
     let connection = null;
@@ -84,6 +85,7 @@ const GuildQueues = function() {
   }
 
 
+  // Add song data (name and youtube id) to guild's queue
   this.addSong = async function(guildId, songName, youtubeId) {
     if(!guildId || !songName || !youtubeId) {
       throw Error(`addSong error: missing input
@@ -99,12 +101,17 @@ const GuildQueues = function() {
       songName: songName,
       youtubeId: youtubeId
     });
+
+    // If we just added to the queue and nothing is playing, start something.
     if(!this.activeGuilds[guildId].player.checkPlayable()) {
       this.playNext(guildId);
     }
   }
 
 
+  // Called when player enters the idle state.
+  // If the queue isn't empty, play the next song.
+  // Otherwise, clean up all resources associated with guild.
   this.playNext = function(guildId) {
     const guild = this.activeGuilds[guildId];
     if(!guild || !guild.player) {
@@ -128,6 +135,7 @@ const GuildQueues = function() {
   }
 
 
+  // Helper function to clean up guild resources.
   this.cleanup = function(guildId) {
     console.log(`Guild ${guildId} cleanup`);
     const guild = this.activeGuilds[guildId];

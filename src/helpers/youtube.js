@@ -1,6 +1,5 @@
 const axios = require('axios');
 const ytdl = require('ytdl-core');
-const fs = require('fs')
 
 const SEARCH_ENDPOINT = 'https://www.googleapis.com/youtube/v3/search';
 
@@ -33,8 +32,9 @@ exports.search = async function(query, count, key) {
 
 exports.download = function(id) {
   const download = ytdl(id, { filter: 'audioonly' });
-  const buff = [];
   return download;
+
+  // Old code. just leaving it here for now
   // return new Promise((resolve, reject) => {
   //   download.on('data', (chunk) => {
   //     buff.push(chunk)

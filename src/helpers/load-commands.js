@@ -5,6 +5,7 @@ const fs = require('fs');
 const DEPLOY = process.env['DEPLOY'] ? true : false;
 const DELETE = process.env['DELETE'] ? true : false;
 
+// Load commands in src/commands
 exports.load = async function(client, token, clientID, guildID) {
   const commandsPath = path.join(__dirname, '../commands');
   const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
