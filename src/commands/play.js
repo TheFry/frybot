@@ -34,7 +34,7 @@ async function getSelection(interaction) {
     choice = await message.awaitMessageComponent({ time: 30_000, componentType: ComponentType.Button });
   } catch(err) {
     interaction.editReply({ content: 'Timeout waiting for input', components: [] })
-    return null;
+    return [null, null];
   }
   return [choice.customId, choice.component.label]
 }
@@ -48,7 +48,7 @@ async function execute(interaction) {
 
   let [songId, songName] = await getSelection(interaction);
 
-  if(!songId) return null;
+  if(!songId || !songName) return null;
   try {
     if(!guildList.activeGuilds[`${guildId}`]) {
       console.log('Have to init guild');
