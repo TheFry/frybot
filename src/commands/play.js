@@ -3,7 +3,7 @@ const { guildList } = require('../helpers/state');
 const yt = require('../helpers/youtube');
 
 const YT_TOKEN = process.env['YT_TOKEN'];
-
+const MAX_BTN_TEXT = 80;
 
 async function getSelection(interaction) {
   const q = interaction.options.getString('query');
@@ -19,10 +19,13 @@ async function getSelection(interaction) {
   }
 
   const buttons = [];
+
   searchData.forEach(result => {
+    let label = result.name.length > MAX_BTN_TEXT ? `${result.name.slice(0, MAX_BTN_TEXT - 4)} ...` : result.name;
+    console.log(label.length);
     buttons.push(new ButtonBuilder()
       .setCustomId(`${result.id}`)
-      .setLabel(`${result.name}`)
+      .setLabel(`${label}`)
       .setStyle(ButtonStyle.Primary)
     )
   })
