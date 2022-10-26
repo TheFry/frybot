@@ -18,20 +18,23 @@ async function getSelection(interaction) {
     throw err;
   }
 
+  const rows = [];
   const buttons = [];
 
   searchData.forEach(result => {
     let label = result.name.length > MAX_BTN_TEXT ? `${result.name.slice(0, MAX_BTN_TEXT - 4)} ...` : result.name;
     console.log(label.length);
-    buttons.push(new ButtonBuilder()
-      .setCustomId(`${result.id}`)
-      .setLabel(`${label}`)
-      .setStyle(ButtonStyle.Primary)
-    )
+    rows.push(new ActionRowBuilder().addComponents(
+      [ new ButtonBuilder()
+        .setCustomId(`${result.id}`)
+        .setLabel(`${label}`)
+        .setStyle(ButtonStyle.Primary) 
+      ]
+    ))
   })
 
-  const buttonRow = new ActionRowBuilder().addComponents(...buttons);
-  const message = await interaction.editReply({content: 'Pick a song', components: [buttonRow], fetchReply: true});
+  // const buttonRow = new ActionRowBuilder().addComponents(...buttons);
+  const message = await interaction.editReply({content: 'Pick a song', components: rows, fetchReply: true});
   let choice = null;
   try {
     choice = await message.awaitMessageComponent({ time: 30_000, componentType: ComponentType.Button });
