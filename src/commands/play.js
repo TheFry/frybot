@@ -23,7 +23,6 @@ async function getSelection(interaction) {
 
   searchData.forEach(result => {
     let label = result.name.length > MAX_BTN_TEXT ? `${result.name.slice(0, MAX_BTN_TEXT - 4)} ...` : result.name;
-    console.log(label.length);
     rows.push(new ActionRowBuilder().addComponents(
       [ new ButtonBuilder()
         .setCustomId(`${result.id}`)
