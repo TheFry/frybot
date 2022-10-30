@@ -26,8 +26,7 @@ const GuildQueues = function() {
           songName: '',
           youtubeId: '',
         }
-      ],
-      channelId: ''
+      ]
     }
   }
 
