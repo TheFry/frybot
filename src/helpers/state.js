@@ -36,20 +36,16 @@ const GuildQueues = function() {
   // Follows same format of _default
   this.initGuild = async function(guildId, channelId, interaction) {
     // init voice connection
-    let connection = null;
-    try {
-      connection = getVoiceConnection(`${guildId}`);
-      if(!connection) {
-        connection = joinVoiceChannel({
-          channelId: `${channelId}`,
-          guildId: `${guildId}`,
-          adapterCreator: interaction.member.guild.voiceAdapterCreator
-        });
-        await entersState(connection, VoiceConnectionStatus.Ready, 5000);
-      }
-    } catch(err) {
-      throw err;
+    const connection = getVoiceConnection(`${guildId}`);
+    if(!connection) {
+      connection = joinVoiceChannel({
+        channelId: `${channelId}`,
+        guildId: `${guildId}`,
+        adapterCreator: interaction.member.guild.voiceAdapterCreator
+      });
+      await entersState(connection, VoiceConnectionStatus.Ready, 5000);
     }
+
 
     // init audio player
     let player = null;
@@ -124,14 +120,11 @@ const GuildQueues = function() {
       return
     }
 
-    try {
-      guild.source = yt.download(song.youtubeId);
-      guild.resource = createAudioResource(guild.source);
-      guild.player.play(guild.resource);
-      console.log(`Guild ${guildId} - playing ${song.songName}`);
-    } catch(err) {
-      throw err;
-    }
+
+    guild.source = yt.download(song.youtubeId);
+    guild.resource = createAudioResource(guild.source);
+    guild.player.play(guild.resource);
+    console.log(`Guild ${guildId} - playing ${song.songName}`);
   }
 
 

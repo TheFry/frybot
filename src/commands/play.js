@@ -7,19 +7,13 @@ const MAX_BTN_TEXT = 80;
 
 async function getSelection(interaction) {
   const q = interaction.options.getString('query');
-  let searchData = null;
-  try {
-    searchData = await yt.search(q, 5, YT_TOKEN);
-    if(searchData === null) {
-      await interaction.editReply('Failed to query youtube');
-      throw err('Failed to query youtube');
-    }
-  } catch(err) {
-    throw err;
+  const searchData = await yt.search(q, 5, YT_TOKEN);
+  if(searchData === null) {
+    await interaction.editReply('Failed to query youtube');
+    throw err('Failed to query youtube');
   }
 
   const rows = [];
-  const buttons = [];
 
   searchData.forEach(result => {
     let label = result.name.length > MAX_BTN_TEXT ? `${result.name.slice(0, MAX_BTN_TEXT - 4)} ...` : result.name;
@@ -54,16 +48,13 @@ async function execute(interaction) {
   let [songId, songName] = await getSelection(interaction);
 
   if(!songId || !songName) return null;
-  try {
-    if(!guildList.activeGuilds[`${guildId}`]) {
-      console.log('Have to init guild');
-      await guildList.initGuild(guildId, channelId, interaction);
-    }
-    guildList.addSong(guildId, songName, songId);
-    console.log(guildList.activeGuilds[`${guildId}`].queue);
-  } catch(err) {
-    throw err;
+
+  if(!guildList.activeGuilds[`${guildId}`]) {
+    console.log('Have to init guild');
+    await guildList.initGuild(guildId, channelId, interaction);
   }
+  guildList.addSong(guildId, songName, songId);
+  console.log(guildList.activeGuilds[`${guildId}`].queue);
   
   interaction.editReply({content: `Added ${songName} to queue`, components: []})
 }

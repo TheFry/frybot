@@ -4,22 +4,18 @@ const ytdl = require('ytdl-core');
 const SEARCH_ENDPOINT = 'https://www.googleapis.com/youtube/v3/search';
 
 exports.search = async function(query, count, key) {
-  let res = {}
-  try {
-    res = await axios.get(SEARCH_ENDPOINT, {
-      headers: { "Content-Type": "application/json" },
-      params: {
-        q: query,
-        key: key,
-        type: 'video',
-        part: 'snippet',
-        maxResults: count
-      }
-    });
-  } catch(err) {
-    throw err;
-  }
-  let vidData = [];
+  const res = await axios.get(SEARCH_ENDPOINT, {
+    headers: { "Content-Type": "application/json" },
+    params: {
+      q: query,
+      key: key,
+      type: 'video',
+      part: 'snippet',
+      maxResults: count
+    }
+  });
+
+  const vidData = [];
   for(const item of res.data.items) {
     vidData.push({
       name: item.snippet.title,
