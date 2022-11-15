@@ -29,7 +29,7 @@ exports.Guild = function(guildId) {
     let connection = getVoiceConnection(`${this.guildId}`);
     if(!connection) {
       connection = joinVoiceChannel({
-        channelId: `${DEBUG ? DEBUG_CHANNEL : interaction.channelId}`,
+        channelId: `${DEBUG ? DEBUG_CHANNEL : interaction.member.voice.channel.id}`,
         guildId: `${this.guildId}`,
         adapterCreator: interaction.member.guild.voiceAdapterCreator
       });
