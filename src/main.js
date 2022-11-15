@@ -22,23 +22,24 @@ function usage() {
   process.exit(1);
 }
 
+
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
 client.commands = new Collection();
 client.login(DC_TOKEN);
 
 client.once('ready', () => {
 	console.log('Client logged in!');
-  loadCommands.load(client, DC_TOKEN, DC_CLIENT, G_ID);
+	loadCommands.load(client, DC_TOKEN, DC_CLIENT, G_ID);
 });
 
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return;
+	if (!interaction.isChatInputCommand()) return;
 	const command = interaction.client.commands.get(interaction.commandName);
 
 	if (!command) {
-    interaction.reply('Command not registered!');
-    return;
-  }
+		interaction.reply('Command not registered!');
+		return;
+	}
 
 	try {
 		await command.execute(interaction);
