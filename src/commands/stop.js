@@ -3,8 +3,9 @@ const { guildList } = require('../helpers/guild');
 
 const DEBUG = process.env['DEBUG'] === "1" ? true : false;
 async function execute(interaction) {
+  const guild = guildList[`${interaction.member.guild.id}`]
   await interaction.reply({ content: "Stopping and clearing queue..." });
-  guildList[`${interaction.member.guild.id}`].cleanupAudio();
+  if(guild) guildList.cleanupAudio();
   await interaction.editReply(`Queue cleared`);
 }
 
