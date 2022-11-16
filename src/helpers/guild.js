@@ -118,6 +118,7 @@ exports.Guild = function(guildId) {
   // Helper function to clean up guild resources.
   this.cleanupAudio = function() {
     console.log(`Guild ${this.guildId} cleanup`);
+    if(this.audio && this.audio.player) this.audio.player.stop();
     this.audio = null;
     try {
       let channel = getVoiceConnection(this.guildId);
