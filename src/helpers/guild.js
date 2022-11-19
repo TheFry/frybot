@@ -7,6 +7,7 @@ const { createAudioPlayer,
         joinVoiceChannel,
         VoiceConnectionStatus, 
         entersState} = require('@discordjs/voice');
+const fs = require('fs');
 
 const DEBUG = process.env['DEBUG'] ? true : false;
 const DEBUG_GUILD = '446523561537044480';
@@ -97,7 +98,7 @@ exports.Guild = function(guildId) {
   // Called when player enters the idle state.
   // If the queue isn't empty, play the next song.
   // Otherwise, clean up all resources associated with guild.
-  this.playNext = function() {
+  this.playNext = async function() {
     if(!this.audio.player) {
       throw Error(`addSong error: player not initialized for guild ${this.guildId}`);
     }
@@ -108,7 +109,7 @@ exports.Guild = function(guildId) {
       return
     }
 
-    this.audio.source.source = yt.download(song.youtubeId);
+    this.audio.source.source = await yt.download(song.youtubeId, this.guildId);
     this.audio.source.audioResource = createAudioResource(this.audio.source.source);
     this.audio.player.play(this.audio.source.audioResource);
     console.log(`Guild ${this.guildId} - playing ${song.songName}`);
@@ -123,9 +124,11 @@ exports.Guild = function(guildId) {
     try {
       let channel = getVoiceConnection(this.guildId);
       if(channel) channel.destroy();
+      if(fs.existsSync(`./${this.guildId}`)) fs.rmSync(`./${this.guildId}`);
     } catch(err) {
       console.log(`Cleanup error for guild ${this.guildId} - ${err}`)
     }
+    
   }
 }
 
