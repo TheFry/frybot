@@ -5,7 +5,7 @@ const DEBUG = process.env['DEBUG'] === "1" ? true : false;
 async function execute(interaction) {
   const guild = guildList[`${interaction.member.guild.id}`]
   await interaction.reply({ content: "Stopping and clearing queue..." });
-  if(guild) guildList.cleanupAudio();
+  if(guild) guild.cleanupAudio();
   await interaction.editReply(`Queue cleared`);
 }
 
