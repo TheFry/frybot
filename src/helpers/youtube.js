@@ -1,5 +1,6 @@
 const axios = require('axios');
 const ytdl = require('ytdl-core');
+const fs = require('fs');
 
 const SEARCH_ENDPOINT = 'https://www.googleapis.com/youtube/v3/search';
 
@@ -26,21 +27,20 @@ exports.search = async function(query, count, key) {
 }
 
 
-exports.download = function(id) {
-  const download = ytdl(id, { filter: 'audioonly' });
-  return download;
-
-  // Old code. just leaving it here for now
-  // return new Promise((resolve, reject) => {
-  //   download.on('data', (chunk) => {
-  //     buff.push(chunk)
-  //   })
-  //   download.once('end', (res) => {
-  //     resolve(Buffer.concat(buff));
-  //   });
-  //   download.on('error', (err) => {
-  //     console.log(err);
-  //     reject(null);
-  //   })
-  // })
+exports.download = function(songId, guildId) {
+  let download = ytdl(songId, { filter: 'audioonly' });
+  const buff = [];
+  return new Promise((resolve, reject) => {
+    download.on('data', (chunk) => {
+      buff.push(chunk)
+    })
+    download.once('end', (res) => {
+      fs.writeFileSync(`./${guildId}`, Buffer.concat(buff));
+      resolve(fs.createReadStream(`./${guildId}`));
+    });
+    download.on('error', (err) => {
+      console.log(err);
+      reject(null);
+    })
+  })
 }
