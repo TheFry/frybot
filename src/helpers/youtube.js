@@ -36,6 +36,7 @@ exports.download = function(songId, guildId) {
     })
     download.once('end', (res) => {
       fs.writeFileSync(`./${guildId}`, Buffer.concat(buff));
+      buff = null;
       resolve(fs.createReadStream(`./${guildId}`));
     });
     download.on('error', (err) => {
