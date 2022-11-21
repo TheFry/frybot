@@ -29,7 +29,7 @@ exports.search = async function(query, count, key) {
 
 exports.download = function(songId, guildId) {
   let download = ytdl(songId, { filter: 'audioonly' });
-  const buff = [];
+  let buff = [];
   return new Promise((resolve, reject) => {
     download.on('data', (chunk) => {
       buff.push(chunk)
