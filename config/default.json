@@ -1,0 +1,14 @@
+{
+    "CommandConfig": {
+        "DELETE": false,
+        "DEPLOY": false
+    },
+    "DebugConfig": {
+        "DEBUG": false,
+        "DEBUG_GUILD": "446523561537044480",
+        "DEBUG_CHANNEL": "805526809667829780"
+    },
+    "YoutubeConfig": {
+        "SEARCH_ENDPOINT": "https://www.googleapis.com/youtube/v3/search"
+    }
+}

@@ -25,11 +25,7 @@ exports.connect = async function(connString, dbName, options) {
   options = options || {};
   if(!connString) throw Error('mongodb: connString not provided');
   const client = new MongoClient(connString, options);
-  try {
-    await client.connect();
-  } catch(err) {
-    throw err;
-  }
+  await client.connect();
   const db = client.db(dbName);
   db.createCollection('lol');
   return client;

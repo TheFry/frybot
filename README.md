@@ -1,3 +1,7 @@
-# geeb-bot
+# frybot
+A discord bot
 
-ICG's Branch
+## TODO
+- Add pause/~skip~ functionality
+- Set up db backend
+- Add stable diffusion command

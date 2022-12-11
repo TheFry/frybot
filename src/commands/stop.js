@@ -1,14 +1,17 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { guildList } = require('../helpers/state');
+const { guildList } = require('../helpers/guild');
+const Config = require('config');
 
+const DEBUG = Config.get("DebugConfig");
 async function execute(interaction) {
+  const guild = guildList[`${interaction.member.guild.id}`]
   await interaction.reply({ content: "Stopping and clearing queue..." });
-  guildList.cleanup(interaction.member.guild.id);
+  if(guild) guild.cleanupAudio();
   await interaction.editReply(`Queue cleared`);
 }
 
 const command = new SlashCommandBuilder()
-  .setName('stop-yt')
+  .setName(`${DEBUG ? 'dev-stop-yt' : 'stop-yt'}`)
   .setDescription('Stop music player')
 
 module.exports = { data: command, execute };

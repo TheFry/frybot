@@ -1,9 +1,9 @@
 const { REST, Routes } = require('discord.js');
 const path = require('path');
 const fs = require('fs');
+const Config = require('config');
+const {DEPLOY,DELETE} = Config.get("CommandConfig");
 
-const DEPLOY = process.env['DEPLOY'] ? true : false;
-const DELETE = process.env['DELETE'] ? true : false;
 
 // Load commands in src/commands
 exports.load = async function(client, token, clientID, guildID) {
