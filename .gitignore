@@ -2,4 +2,5 @@
 .dc-client
 .gid
 .yt-key
+.env
 node_modules
