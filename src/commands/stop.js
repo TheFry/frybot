@@ -10,7 +10,7 @@ async function execute(interaction) {
 }
 
 const command = new SlashCommandBuilder()
-  .setName(`${DEBUG ? 'dev-stop-yt' : 'stop-yt'}`)
+  .setName(`${DEBUG ? 'dev-stop' : 'stop'}`)
   .setDescription('Stop music player')
 
 module.exports = { data: command, execute };

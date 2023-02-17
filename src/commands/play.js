@@ -58,7 +58,7 @@ async function execute(interaction) {
 }
 
 const command = new SlashCommandBuilder()
-  .setName(`${DEBUG ? 'dev-play-yt' : 'play-yt'}`)
+  .setName(`${DEBUG ? 'dev-play' : 'play'}`)
   .setDescription('Play a song')
   .addStringOption(option => 
     option.setName('query')

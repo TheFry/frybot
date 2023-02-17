@@ -17,7 +17,7 @@ async function execute(interaction) {
 }
 
 const command = new SlashCommandBuilder()
-  .setName(`${DEBUG ? 'dev-skip-yt' : 'skip-yt'}`)
+  .setName(`${DEBUG ? 'dev-skip' : 'skip'}`)
   .setDescription('Skip to the next track')
 
 module.exports = { data: command, execute };
