@@ -12,6 +12,7 @@ const fs = require('fs');
 const DEBUG = process.env['DEBUG'] ? true : false;
 const DEBUG_GUILD = '446523561537044480';
 const DEBUG_CHANNEL = '805526809667829780';
+const IDLE_TIMEOUT = 60000;
    
 exports.Guild = function(guildId) {
   // Queue data. Designed to work with multiple guilds
@@ -23,6 +24,7 @@ exports.Guild = function(guildId) {
   this.guildId = DEBUG ? DEBUG_GUILD : guildId;
   if(!this.guildId) throw Error('guild init - must provide guild id');
   this.audio = null;    // Call initAudio
+  this.idleTimeout = null;  // timer object created when player goes into idle state
 
 
   this.initAudio = async function(interaction) {
@@ -105,8 +107,9 @@ exports.Guild = function(guildId) {
 
     const song = this.audio.queue.shift();
     if(!song) {
-      this.cleanupAudio();
-      return
+      console.log(`Guild ${this.guildId} idle. Setting cleanup timeout`);
+      this.setIdleTimeout();
+      return;
     }
 
     this.audio.source.source = await yt.download(song.youtubeId, this.guildId);
@@ -128,7 +131,14 @@ exports.Guild = function(guildId) {
     } catch(err) {
       console.log(`Cleanup error for guild ${this.guildId} - ${err}`)
     }
-    
+  }
+
+
+  // Small wrapper to set this.idleTimeout
+  this.setIdleTimeout = function(time) {
+    time = time || IDLE_TIMEOUT;
+    if(this.idleTimeout !== null) clearTimeout(this.idleTimeout);
+    this.idleTimeout = setTimeout(this.cleanupAudio.bind(this), time);
   }
 }
 

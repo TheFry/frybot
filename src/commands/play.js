@@ -7,11 +7,13 @@ const MAX_BTN_TEXT = 80;
 const DEBUG = process.env['DEBUG'] === "1" ? true : false
 
 async function getSelection(interaction) {
+  const guildId = interaction.member.guild.id;
   const q = interaction.options.getString('query');
   const searchData = await yt.search(q, 5, YT_TOKEN);
   if(searchData === null) {
     await interaction.editReply('Failed to query youtube');
-    throw err('Failed to query youtube');
+    guildList[`${guildId}`].setIdleTimeout();
+    return [null, null];
   }
 
   const rows = [];
@@ -34,20 +36,25 @@ async function getSelection(interaction) {
     choice = await message.awaitMessageComponent({ time: 30_000, componentType: ComponentType.Button });
   } catch(err) {
     interaction.editReply({ content: 'Timeout waiting for input', components: [] })
+    guildList[`${guildId}`].setIdleTimeout();
     return [null, null];
   }
   return [choice.customId, choice.component.label]
 }
 
 async function execute(interaction) {
+  const guildId = interaction.member.guild.id;
+  if(!guildList[`${guildId}`]) {
+    guildList[`${guildId}`] = new Guild(guildId);
+  } else if(guildList[`${guildId}`].idleTimeout !== null) {
+    console.log(`Clearing idle timeout for guild ${guildId}`)
+    clearTimeout(guildList[`${guildId}`].idleTimeout)
+  }
   const q = interaction.options.getString('query');
   await interaction.reply({ content: `Searcing youtube for ${q}` });
-  const guildId = interaction.member.guild.id;
 
   let [songId, songName] = await getSelection(interaction);
   if(!songId || !songName) return null;
-
-  if(!guildList[`${guildId}`]) guildList[`${guildId}`] = new Guild(guildId);
   if(!guildList[`${guildId}`].audio) {
     await guildList[`${guildId}`].initAudio(interaction);
     console.log('done audio')
