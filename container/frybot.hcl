@@ -17,12 +17,12 @@ job "frybot" {
       }
 
       env {
-        // DEPLOY = 1
+        DEPLOY = 1
       }
 
       resources {
         cpu = "500"
-        memory = "128"
+        memory = "512"
       }
 
       vault {
