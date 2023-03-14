@@ -140,6 +140,7 @@ exports.Guild = function(guildId) {
     
     if(this.idleTimeout !== null) {
       clearTimeout(this.idleTimeout);
+      this.idleTimeout = null;
     }
     if(time > 0) {
       this.idleTimeout = setTimeout(this.cleanupAudio.bind(this), time);

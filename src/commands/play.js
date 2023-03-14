@@ -47,7 +47,7 @@ async function execute(interaction) {
   if(!guildList[`${guildId}`]) {
     guildList[`${guildId}`] = new Guild(guildId);
   } else if(guildList[`${guildId}`].idleTimeout !== null) {
-    clearTimeout(guildList[`${guildId}`].idleTimeout)
+    guildList[`${guildId}`].setIdleTimeout(0);
   }
   const q = interaction.options.getString('query');
   await interaction.reply({ content: `Searcing youtube for ${q}` });
