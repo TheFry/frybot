@@ -122,6 +122,7 @@ exports.Guild = function(guildId) {
   // Helper function to clean up guild resources.
   this.cleanupAudio = function() {
     console.log(`Guild ${this.guildId} cleanup`);
+    if(this.idleTimeout !== null) this.setIdleTimeout(0);
     if(this.audio && this.audio.player) this.audio.player.stop();
     this.audio = null;
     try {
@@ -137,8 +138,13 @@ exports.Guild = function(guildId) {
   // Small wrapper to set this.idleTimeout
   this.setIdleTimeout = function(time) {
     time = time || IDLE_TIMEOUT;
-    if(this.idleTimeout !== null) clearTimeout(this.idleTimeout);
-    this.idleTimeout = setTimeout(this.cleanupAudio.bind(this), time);
+    
+    if(this.idleTimeout !== null) {
+      clearTimeout(this.idleTimeout);
+    }
+    if(time > 0) {
+      this.idleTimeout = setTimeout(this.cleanupAudio.bind(this), time);
+    }
   }
 }
 
