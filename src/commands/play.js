@@ -46,7 +46,7 @@ async function execute(interaction) {
   const guildId = interaction.member.guild.id;
   if(!guildList[`${guildId}`]) {
     guildList[`${guildId}`] = new Guild(guildId);
-  } else if(guildList[`${guildId}`].idleTimeout !== null) {
+  } else if(guildList[`${guildId}`].idleTimer !== null) {
     guildList[`${guildId}`].setIdleTimeout(0);
   }
   const q = interaction.options.getString('query');

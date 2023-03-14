@@ -12,9 +12,8 @@ const fs = require('fs');
 const DEBUG = process.env['DEBUG'] ? true : false;
 const DEBUG_GUILD = '446523561537044480';
 const DEBUG_CHANNEL = '805526809667829780';
-const IDLE_TIMEOUT = 60000;
    
-exports.Guild = function(guildId) {
+exports.Guild = function(guildId, idleTimeout) {
   // Queue data. Designed to work with multiple guilds
   // Each player's key should be a string of guildID
   // Note that discordjs voice connections are not stored.
@@ -24,7 +23,8 @@ exports.Guild = function(guildId) {
   this.guildId = DEBUG ? DEBUG_GUILD : guildId;
   if(!this.guildId) throw Error('guild init - must provide guild id');
   this.audio = null;    // Call initAudio
-  this.idleTimeout = null;  // timer object created when player goes into idle state
+  this.idleTimer = null;  // timer object created when player goes into idle state
+  this.idleTimeout = idleTimeout || 300000;  // Default timeout of 5 minutes
 
 
   this.initAudio = async function(interaction) {
@@ -121,7 +121,7 @@ exports.Guild = function(guildId) {
   // Helper function to clean up guild resources.
   this.cleanupAudio = function() {
     console.log(`Guild ${this.guildId} cleanup`);
-    if(this.idleTimeout !== null) this.setIdleTimeout(0);
+    if(this.idleTimer !== null) this.setIdleTimeout(0);
     if(this.audio && this.audio.player) this.audio.player.stop();
     this.audio = null;
     try {
@@ -136,14 +136,14 @@ exports.Guild = function(guildId) {
 
   // Small wrapper to set this.idleTimeout
   this.setIdleTimeout = function(time) {
-    time = typeof time === 'undefined' ? IDLE_TIMEOUT : Number(time);
+    time = typeof time === 'undefined' ? this.idleTimeout : Number(time);
     
-    if(this.idleTimeout !== null) {
-      clearTimeout(this.idleTimeout);
-      this.idleTimeout = null;
+    if(this.idleTimer !== null) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
     }
     if(time > 0) {
-      this.idleTimeout = setTimeout(this.cleanupAudio.bind(this), time);
+      this.idleTimer = setTimeout(this.cleanupAudio.bind(this), time);
     }
   }
 }
