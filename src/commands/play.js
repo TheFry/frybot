@@ -47,7 +47,6 @@ async function execute(interaction) {
   if(!guildList[`${guildId}`]) {
     guildList[`${guildId}`] = new Guild(guildId);
   } else if(guildList[`${guildId}`].idleTimeout !== null) {
-    console.log(`Clearing idle timeout for guild ${guildId}`)
     clearTimeout(guildList[`${guildId}`].idleTimeout)
   }
   const q = interaction.options.getString('query');

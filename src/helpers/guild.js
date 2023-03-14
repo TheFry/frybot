@@ -107,7 +107,6 @@ exports.Guild = function(guildId) {
 
     const song = this.audio.queue.shift();
     if(!song) {
-      console.log(`Guild ${this.guildId} idle. Setting cleanup timeout`);
       this.setIdleTimeout();
       return;
     }
