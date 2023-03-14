@@ -136,7 +136,7 @@ exports.Guild = function(guildId) {
 
   // Small wrapper to set this.idleTimeout
   this.setIdleTimeout = function(time) {
-    time = time || IDLE_TIMEOUT;
+    time = typeof time === 'undefined' ? IDLE_TIMEOUT : Number(time);
     
     if(this.idleTimeout !== null) {
       clearTimeout(this.idleTimeout);
