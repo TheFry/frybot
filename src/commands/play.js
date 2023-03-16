@@ -12,7 +12,9 @@ async function getSelection(interaction) {
   const searchData = await yt.search(q, 5, YT_TOKEN);
   if(searchData === null) {
     await interaction.editReply('Failed to query youtube');
-    guildList[`${guildId}`].setIdleTimeout();
+    if(!guildList[`${guildId}`].audio.player.checkPlayable()) {
+      guildList[`${guildId}`].setIdleTimeout();
+    }
     return [null, null];
   }
 
@@ -36,7 +38,9 @@ async function getSelection(interaction) {
     choice = await message.awaitMessageComponent({ time: 30_000, componentType: ComponentType.Button });
   } catch(err) {
     interaction.editReply({ content: 'Timeout waiting for input', components: [] })
-    guildList[`${guildId}`].setIdleTimeout();
+    if(!guildList[`${guildId}`].audio.player.checkPlayable()) {
+      guildList[`${guildId}`].setIdleTimeout();
+    }
     return [null, null];
   }
   return [choice.customId, choice.component.label]
