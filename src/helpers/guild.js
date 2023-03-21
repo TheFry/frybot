@@ -12,6 +12,7 @@ const fs = require('fs');
 const DEBUG = process.env['DEBUG'] ? true : false;
 const DEBUG_GUILD = '446523561537044480';
 const DEBUG_CHANNEL = '805526809667829780';
+const VOICE_VOLUME = 0.28
    
 exports.Guild = function(guildId, idleTimeout) {
   // Queue data. Designed to work with multiple guilds
@@ -112,7 +113,8 @@ exports.Guild = function(guildId, idleTimeout) {
     }
 
     this.audio.source.source = await yt.download(song.youtubeId, this.guildId);
-    this.audio.source.audioResource = createAudioResource(this.audio.source.source);
+    this.audio.source.audioResource = createAudioResource(this.audio.source.source, { inlineVolume: true,  });
+    this.audio.source.audioResource.volume.setVolume(VOICE_VOLUME);
     this.audio.player.play(this.audio.source.audioResource);
     console.log(`Guild ${this.guildId} - playing ${song.songName}`);
   }
