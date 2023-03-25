@@ -1,20 +1,21 @@
-const yt = require('./youtube');
-const { createAudioPlayer, 
-        createAudioResource,
-        NoSubscriberBehavior,
-        AudioPlayerStatus,
-        getVoiceConnection,
-        joinVoiceChannel,
-        VoiceConnectionStatus, 
-        entersState} = require('@discordjs/voice');
+import { search, download } from './youtube';
+import { createAudioPlayer, 
+  createAudioResource,
+  NoSubscriberBehavior,
+  AudioPlayerStatus,
+  getVoiceConnection,
+  joinVoiceChannel,
+  VoiceConnectionStatus, 
+  entersState} from '@discordjs/voice'
+import { ChatInputCommandInteraction, GuildMember, MembershipScreeningFieldType } from 'discord.js';
 const fs = require('fs');
 
 const DEBUG = process.env['DEBUG'] ? true : false;
 const DEBUG_GUILD = '446523561537044480';
-const DEBUG_CHANNEL = '805526809667829780';
+const DEBUG_CHANNEL = '699467902977572965';
 const VOICE_VOLUME = 0.28
    
-exports.Guild = function(guildId, idleTimeout) {
+exports.Guild = function(guildId: string, idleTimeout: number) {
   // Queue data. Designed to work with multiple guilds
   // Each player's key should be a string of guildID
   // Note that discordjs voice connections are not stored.
@@ -27,15 +28,20 @@ exports.Guild = function(guildId, idleTimeout) {
   this.idleTimer = null;  // timer object created when player goes into idle state
   this.idleTimeout = idleTimeout || 300000;  // Default timeout of 5 minutes
 
-
-  this.initAudio = async function(interaction) {
-    // init voice connection
+  // init voice connection
+  this.initAudio = async function(interaction: ChatInputCommandInteraction) {
     let connection = getVoiceConnection(`${this.guildId}`);
+    const member = interaction.member as GuildMember;
+    const voiceChannel = member.voice.channelId;
+    if(!voiceChannel) {
+      interaction.editReply({ content: "You must join a voice channel before you can play music." });
+    }
+
     if(!connection) {
       connection = joinVoiceChannel({
-        channelId: `${DEBUG ? DEBUG_CHANNEL : interaction.member.voice.channel.id}`,
+        channelId: `${DEBUG ? DEBUG_CHANNEL : member.voice.channel?.id}`,
         guildId: `${this.guildId}`,
-        adapterCreator: interaction.member.guild.voiceAdapterCreator
+        adapterCreator: member.guild.voiceAdapterCreator
       });
       await entersState(connection, VoiceConnectionStatus.Ready, 5000);
     }
@@ -50,13 +56,12 @@ exports.Guild = function(guildId, idleTimeout) {
       });
       await entersState(player, AudioPlayerStatus.Idle, 5000);
       connection.subscribe(player);
-      console.log(`Guild ${this.guildId} - audio player initialized in idle state to channel ${interaction.channelId}`);
+      console.log(`Guild ${this.guildId} - audio player initialized in idle state to channel ${member.voice.channel?.id} | ${member.voice.channel?.name}`);
     } catch(err) {
       connection.destroy();
       if(player) player.stop();
       throw err;
     }
-
 
     // Note: we don't keep track of voice connection
     // discord.js does this for us with getVoiceConnection
@@ -65,8 +70,8 @@ exports.Guild = function(guildId, idleTimeout) {
       source: {},
       idle: true,
       queue: [],
-      channelId: interaction.channelId,
-      channelName: interaction.channel.name,
+      channelId: member.voice.channel?.id,
+      channelName: member.voice.channel?.name
     }
 
     player.on(AudioPlayerStatus.Idle, () => {
@@ -76,7 +81,7 @@ exports.Guild = function(guildId, idleTimeout) {
 
 
   // Add song data (name and youtube id) to guild's queue
-  this.addSong = async function(songName, youtubeId) {
+  this.addSong = async function(songName: string, youtubeId: string) {
     if(!songName || !youtubeId) {
       throw Error(`addSong error: missing input
         song: ${songName}
@@ -112,7 +117,7 @@ exports.Guild = function(guildId, idleTimeout) {
       return;
     }
 
-    this.audio.source.source = await yt.download(song.youtubeId, this.guildId);
+    this.audio.source.source = await download(song.youtubeId, this.guildId);
     this.audio.source.audioResource = createAudioResource(this.audio.source.source, { inlineVolume: true,  });
     this.audio.source.audioResource.volume.setVolume(VOICE_VOLUME);
     this.audio.player.play(this.audio.source.audioResource);
@@ -137,7 +142,7 @@ exports.Guild = function(guildId, idleTimeout) {
 
 
   // Small wrapper to set this.idleTimeout
-  this.setIdleTimeout = function(time) {
+  this.setIdleTimeout = function(time: number) {
     time = typeof time === 'undefined' ? this.idleTimeout : Number(time);
     
     if(this.idleTimer !== null) {
