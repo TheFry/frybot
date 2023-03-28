@@ -1,8 +1,7 @@
-FROM node:16-alpine
+FROM node:18-alpine
 
 WORKDIR /app
 RUN apk add --no-cache ffmpeg
-COPY package.* .
-RUN npm install
-COPY src/ .
-CMD ["node", "main.js"]
+COPY package.* tsconfig.json src/ .
+RUN npm install && npx tsc && rm -rf src
+CMD ["node", "built/main.js"]

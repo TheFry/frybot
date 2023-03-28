@@ -13,7 +13,7 @@ job "frybot-dev" {
       driver = "docker"
 
       config {
-        image = "docker-reg.service.consul:5000/frybot:latest"
+        image = "docker-reg.service.consul:5000/frybot:dev"
       }
 
       env {
