@@ -15,7 +15,7 @@ import fs from 'fs';
 
 const DEBUG = process.env['DEBUG'] ? true : false;
 const DEBUG_GUILD = '446523561537044480';
-const DEBUG_CHANNEL = '805526809667829780';
+// const DEBUG_CHANNEL = '805526809667829780';
 const VOICE_VOLUME = 0.28
 
 interface QueueEntry {
@@ -63,7 +63,7 @@ export class Guild {
 
     if(!connection) {
       connection = joinVoiceChannel({
-        channelId: `${DEBUG ? DEBUG_CHANNEL : member.voice.channel?.id}`,
+        channelId: `${member.voice.channel?.id}`,
         guildId: `${this.guildId}`,
         adapterCreator: member.guild.voiceAdapterCreator
       });
