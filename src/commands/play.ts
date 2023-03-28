@@ -60,9 +60,7 @@ async function execute(interaction: ChatInputCommandInteraction) {
 
   let [songId, songName] = await getSelection(interaction);
   if(!songId || !songName) return null;
-  console.log(guildList)
   if(!guildList[`${guildId}`].checkInitAudio()) {
-    console.log('need to init')
     await guildList[`${guildId}`].initAudio(interaction);
   } 
   guildList[`${guildId}`].addSong(songName, songId);
