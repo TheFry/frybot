@@ -13,7 +13,6 @@ client.login(DC_TOKEN);
 client.once('ready', () => {
 	console.log('Client logged in!');
 	client.commands = new Collection();
-	console.log(client.commands);
 	loadCommands(client, DC_TOKEN, DC_CLIENT, G_ID);
 });
 
