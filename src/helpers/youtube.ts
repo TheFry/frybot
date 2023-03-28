@@ -4,7 +4,12 @@ import fs from 'fs';
 
 const SEARCH_ENDPOINT = 'https://www.googleapis.com/youtube/v3/search';
 
-export async function search(query: string, count: Number, key: string) {
+export interface YTSearchResult {
+  name: string,
+  id: string
+}
+
+export async function search(query: string, count: Number, key: string): Promise<Array<YTSearchResult>> {
   const res = await axios.get(SEARCH_ENDPOINT, {
     headers: { "Content-Type": "application/json" },
     params: {
@@ -16,7 +21,7 @@ export async function search(query: string, count: Number, key: string) {
     }
   });
 
-  const vidData = [];
+  const vidData: Array<YTSearchResult> = [];
   for(const item of res.data.items) {
     vidData.push({
       name: item.snippet.title,
@@ -27,7 +32,7 @@ export async function search(query: string, count: Number, key: string) {
 }
 
 
-export function download(songId: string, guildId: string) {
+export function download(songId: string, guildId: string): Promise<fs.ReadStream> {
   let download = ytdl(songId, { filter: 'audioonly' });
   return new Promise((resolve, reject) => {
     let buff: any[] | null = [];
