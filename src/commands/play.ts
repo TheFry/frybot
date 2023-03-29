@@ -9,14 +9,14 @@ const DEBUG = process.env['DEBUG'] === "1" ? true : false
 
 async function getSelection(interaction: ChatInputCommandInteraction): Promise<Array<string | null>> {
   const member = interaction.member as GuildMember;
-  const guildId = member.guild.id;
+  let guild = guildList[member.guild.id];
   const q = interaction.options.getString('query');
   if(!q) return [null, null]
   const searchData: yt.YTSearchResult [] = await yt.search(q, 5, YT_TOKEN);
   if(searchData === null) {
     await interaction.editReply('Failed to query youtube');
-    if(!guildList[`${guildId}`].audio.player.checkPlayable()) {
-      guildList[`${guildId}`].setIdleTimeout();
+    if(guild && guild.checkInitAudio() && !guild.checkPlayable()) {
+      guild.setIdleTimeout();
     }
     return [null, null];
   }
@@ -39,8 +39,8 @@ async function getSelection(interaction: ChatInputCommandInteraction): Promise<A
     choice = await message.awaitMessageComponent({ time: 30_000, componentType: ComponentType.Button });
   } catch(err) {
     interaction.editReply({ content: 'Timeout waiting for input', components: [] })
-    if(!guildList[`${guildId}`].audio.player.checkPlayable()) {
-      guildList[`${guildId}`].setIdleTimeout();
+    if(guild && guild.checkInitAudio() && !guild.checkPlayable()) {
+      guild.setIdleTimeout();
     }
     return [null, null];
   }
@@ -50,21 +50,22 @@ async function getSelection(interaction: ChatInputCommandInteraction): Promise<A
 
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const member = interaction.member as GuildMember;
-  const guildId = member.guild.id;
-  if(!guildList[`${guildId}`]) {
-    guildList[`${guildId}`] = new Guild(guildId);
-  } else if(guildList[`${guildId}`].idleTimer !== null) {
-    guildList[`${guildId}`].setIdleTimeout(0);
+  let guild = guildList[member.guild.id];
+  if(!guild) {
+    guild = new Guild(member.guild.id);
+    guildList[member.guild.id] = guild;
+  } else if(guild.checkTimeout()) {
+    guild.setIdleTimeout(0);
   }
   const q = interaction.options.getString('query');
   await interaction.reply({ content: `Searcing youtube for ${q}` });
 
   let [songId, songName] = await getSelection(interaction);
   if(!songId || !songName) return;
-  if(!guildList[`${guildId}`].checkInitAudio()) {
-    await guildList[`${guildId}`].initAudio(interaction);
+  if(!guild.checkInitAudio()) {
+    await guild.initAudio(interaction);
   } 
-  guildList[`${guildId}`].addSong(songName, songId);
+  guild.addSong(songName, songId);
   interaction.editReply({content: `Added ${songName} to queue`, components: []})
 }
 

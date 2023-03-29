@@ -6,8 +6,8 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   const member = interaction.member as GuildMember;
   const guild = guildList[`${member.guild.id}`];
 
-  if(guild && guild.checkInitAudio() && guild.audio.queue.length !== 0) {
-    await interaction.reply({ content: `Skipping to => ${guild.audio.queue[0].songName}` });
+  if(guild && guild.checkInitAudio() && guild.getQueue().length > 0) {
+    await interaction.reply({ content: `Skipping to => ${guild.getQueue()[0].songName}` });
     await guild.playNext();
     return;
   } else {

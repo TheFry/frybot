@@ -4,7 +4,7 @@ import { guildList } from '../helpers/guild';
 const DEBUG = process.env['DEBUG'] === "1" ? true : false;
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const member = interaction.member as GuildMember;
-  const guild = guildList[`${member.guild.id}`]
+  const guild = guildList[member.guild.id]
   await interaction.reply({ content: "Stopping and clearing queue..." });
   if(guild) guild.cleanupAudio();
   await interaction.editReply(`Queue cleared`);

@@ -34,6 +34,7 @@ interface GuildAudio {
   channelId?: string;
   channelName?: string;
 }
+
    
 export class Guild {
   // Queue data. Designed to work with multiple guilds
@@ -126,6 +127,11 @@ export class Guild {
   }
 
 
+  getQueue(): Array<QueueEntry> {
+    return this.#audio?.queue || []
+  }
+
+
   // Called when player enters the idle state.
   // If the queue isn't empty, play the next song.
   // Otherwise, clean up all resources associated with guild.
@@ -174,11 +180,20 @@ export class Guild {
     }
   }
 
+  checkTimeout(): boolean {
+    if (!this.#idleTimer) return true
+    else return false
+  }
 
   checkInitAudio(): boolean {
     if(this.#audio) return true;
     else return false
   }
+
+  checkPlayable(): boolean {
+    if(this.#audio?.player.checkPlayable()) return true
+    else return false 
+  }
 }
 
-export const guildList: any = {};
+export const guildList: { [key: string]: Guild | undefined } = {};
