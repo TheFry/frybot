@@ -7,12 +7,12 @@ const YT_TOKEN = process.env['YT_TOKEN'] as string;
 const MAX_BTN_TEXT = 80;
 const DEBUG = process.env['DEBUG'] === "1" ? true : false
 
-async function getSelection(interaction: ChatInputCommandInteraction) {
+async function getSelection(interaction: ChatInputCommandInteraction): Promise<Array<string | null>> {
   const member = interaction.member as GuildMember;
   const guildId = member.guild.id;
   const q = interaction.options.getString('query');
   if(!q) return [null, null]
-  const searchData = await yt.search(q, 5, YT_TOKEN);
+  const searchData: yt.YTSearchResult [] = await yt.search(q, 5, YT_TOKEN);
   if(searchData === null) {
     await interaction.editReply('Failed to query youtube');
     if(!guildList[`${guildId}`].audio.player.checkPlayable()) {
@@ -44,10 +44,11 @@ async function getSelection(interaction: ChatInputCommandInteraction) {
     }
     return [null, null];
   }
+  if(!choice.component.label) return [null, null]
   return [choice.customId, choice.component.label]
 }
 
-async function execute(interaction: ChatInputCommandInteraction) {
+async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const member = interaction.member as GuildMember;
   const guildId = member.guild.id;
   if(!guildList[`${guildId}`]) {
@@ -59,7 +60,7 @@ async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.reply({ content: `Searcing youtube for ${q}` });
 
   let [songId, songName] = await getSelection(interaction);
-  if(!songId || !songName) return null;
+  if(!songId || !songName) return;
   if(!guildList[`${guildId}`].checkInitAudio()) {
     await guildList[`${guildId}`].initAudio(interaction);
   } 

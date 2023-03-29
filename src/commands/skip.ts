@@ -2,7 +2,7 @@ import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'd
 import { guildList } from '../helpers/guild';
 
 const DEBUG = process.env['DEBUG'] === "1" ? true : false;
-async function execute(interaction: ChatInputCommandInteraction) {
+async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const member = interaction.member as GuildMember;
   const guild = guildList[`${member.guild.id}`];
 

@@ -8,7 +8,7 @@ const DELETE = process.env['DELETE'] ? true : false;
 
 
 // Load commands in src/commands
-export default async function load(client: DiscordClient, token: string, clientID: string, guildID: string) {
+export default async function load(client: DiscordClient, token: string, clientID: string, guildID: string): Promise<void> {
   const commandsPath = path.join(__dirname, '../commands');
   const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
   const rest = new REST({ version: '10' }).setToken(token);
