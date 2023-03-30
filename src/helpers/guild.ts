@@ -10,7 +10,7 @@ import {
   joinVoiceChannel,
   VoiceConnectionStatus, 
   entersState} from '@discordjs/voice'
-import { ChatInputCommandInteraction, GuildMember, MembershipScreeningFieldType } from 'discord.js';
+import { ChatInputCommandInteraction, GuildMember } from 'discord.js';
 import fs from 'fs';
 
 const DEBUG = process.env['DEBUG'] ? true : false;

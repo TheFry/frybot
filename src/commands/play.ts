@@ -1,5 +1,4 @@
-import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ChatInputCommandInteraction, GuildMember, ActionRow, TextInputComponent, InteractionEditReplyOptions, InteractionReplyOptions, AnyComponentBuilder } from 'discord.js';
-import { memoryUsage } from 'process';
+import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ChatInputCommandInteraction, GuildMember } from 'discord.js';
 import { Guild, guildList } from '../helpers/guild';
 import * as yt from '../helpers/youtube';
 
