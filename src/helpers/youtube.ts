@@ -1,5 +1,5 @@
 import axios from 'axios';
-import ytdl from 'ytdl-core';
+import ytdl from '@distube/ytdl-core';
 import fs from 'fs';
 
 const SEARCH_ENDPOINT = 'https://www.googleapis.com/youtube/v3/search';
