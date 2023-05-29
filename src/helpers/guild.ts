@@ -9,9 +9,19 @@ import {
   getVoiceConnection,
   joinVoiceChannel,
   VoiceConnectionStatus, 
-  entersState} from '@discordjs/voice'
+  entersState} from '@discordjs/voice';
+
+import { 
+  Mutex, 
+  MutexInterface, 
+  Semaphore, 
+  SemaphoreInterface, 
+  withTimeout } from 'async-mutex';
+
 import { ChatInputCommandInteraction, GuildMember } from 'discord.js';
 import fs from 'fs';
+
+
 
 const DEBUG = process.env['DEBUG'] ? true : false;
 const DEBUG_GUILD = '446523561537044480';
@@ -41,15 +51,15 @@ export class Guild {
   // Note that discordjs voice connections are not stored.
   // The library handles that for us.
   // youtubeId and song name persist to storage if enabled (not implemented yet)
-  guildId: string
-  idleTimeout: number
-
+  guildId: string;
+  idleTimeout: number;
+  #idleTimer: NodeJS.Timeout | null = null;
+  initAudioMutex = new Mutex();  
   audio: GuildAudio = {
     queue: [],
     source: {}
   }
 
-  #idleTimer: NodeJS.Timeout | null = null;
 
   constructor(guildId: string, idleTimeout: number = 30000) {
     this.guildId = DEBUG ? DEBUG_GUILD : guildId;
@@ -58,10 +68,17 @@ export class Guild {
 
   // init voice connection
   async initAudio(member: GuildMember, channelId: string | null = null): Promise<void> {
+    const release = await this.initAudioMutex.acquire();
     let connection = getVoiceConnection(this.guildId);
     const voiceChannel = channelId ? channelId : member.voice.channelId;
 
+    if(this.audio.player && connection) {
+      release();
+      return;
+    }
+
     if(!voiceChannel) {
+      release();
       throw Error('ERROR initAudio - cannot get voice channel Id');
     }
 
@@ -90,9 +107,11 @@ export class Guild {
         connection.destroy();
         if(this.audio.player) this.audio.player.stop();
         this.audio.player = undefined;
+        release();
         throw err;
       }
     }
+    release();
   }
 
 
@@ -179,13 +198,16 @@ export class Guild {
     }
   }
 
+
   checkTimeout(): boolean {
     if (!this.#idleTimer) return true
     else return false
   }
 
+
   checkInitAudio(): boolean {
-    if(this.audio) return true;
+    let connection = getVoiceConnection(this.guildId);
+    if(this.audio.player && connection) return true;
     else return false
   }
 }
