@@ -119,9 +119,7 @@ export class Guild {
         song: ${songName}
         songId: ${youtubeId}
       `);
-    } else if(!this.checkInitAudio()) {
-      throw Error(`addSong error: player not initialized for guild ${this.guildId}`);
-    }
+    } 
     
     this.audio.queue.push({
       songName: songName,
