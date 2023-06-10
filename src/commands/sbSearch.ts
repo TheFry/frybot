@@ -5,13 +5,11 @@ import * as yt from '../helpers/youtube';
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
 const DEBUG = process.env['DEBUG'] === "1" ? true : false
 
-async function getSelection(interaction: ChatInputCommandInteraction): Promise<void> {
+async function getSelection(interaction: ChatInputCommandInteraction, query: string): Promise<void> {
   const member = interaction.member as GuildMember;
   let guild = guildList[member.guild.id];
   if(!guild) return;
-  const q = interaction.options.getString('query');
-  if(!q) return;
-  const searchData: yt.YTSearchResult [] = await yt.search(q, 5, YT_TOKEN);
+  const searchData: yt.YTSearchResult [] = await yt.search(query, 5, YT_TOKEN);
   if(searchData === null) {
     await interaction.editReply('Failed to query youtube');
     return;
@@ -34,42 +32,36 @@ async function getSelection(interaction: ChatInputCommandInteraction): Promise<v
   let selectedVideo = 0;
   let current_video = 0;
   let choice = null;
-  while (choice == null && current_video < searchData.length){
-    const message = await interaction.editReply({content: `https://www.youtube.com/watch?v=${searchData[current_video].id}`, components: rows });
-  try {
-    choice = await message.awaitMessageComponent({ time: 30_000, componentType: ComponentType.Button });
-    if(choice && choice.customId == "next"){
-        choice = null;
+  while (choice == null && current_video < searchData.length) {
+    const message = await interaction.editReply({ content: `https://www.youtube.com/watch?v=${searchData[current_video].id}`, components: rows });
+    try {
+      choice = await message.awaitMessageComponent({ time: 30_000, componentType: ComponentType.Button });
+      if(choice && choice.customId == "next"){
+          choice = null;
+      }
+    } catch(err) {
+      interaction.editReply({ content: 'Timeout waiting for input', components: [] })
+      return;
     }
-  } catch(err) {
-    interaction.editReply({ content: 'Timeout waiting for input', components: [] })
-    return;
-  }
-  selectedVideo = current_video;
-  current_video++;
+    selectedVideo = current_video;
+    current_video++;
   } 
   if(choice == null) return;
   const fileName = guild.guildId+"sb";
   await yt.download(searchData[selectedVideo].id, fileName);
   await guild.setSoundBite(fileName);
-  await interaction.editReply({ content: `https://www.youtube.com/watch?v=${searchData[selectedVideo].id} \n Enter video trim \n /sbTrim 00:00:00 00:00:00 #h/m/s`, components: [] });
-  
+  await interaction.editReply({ content: `https://www.youtube.com/watch?v=${searchData[selectedVideo].id} \n Enter video trim \n /sbTrim 00:00:00 00:00:00 #h/m/s`, components: [] })
 }
 
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const member = interaction.member as GuildMember;
-  let guild = guildList[member.guild.id];
-  if(!guild) {
-    guild = new Guild(member.guild.id);
-    guildList[member.guild.id] = guild;
-  } else if(guild.checkTimeout()) {
-    guild.setIdleTimeout(0);
-  }
-  const q = interaction.options.getString('query');
-  await interaction.reply({ content: `Searcing youtube for ${q}` });
+  const q = interaction.options.getString('query') as string;
 
-  await getSelection(interaction);
-  
+  await interaction.reply({ content: `Searcing youtube for ${q}` });
+  if(!guildList[member.guild.id]) {
+    guildList[member.guild.id] = new Guild(member.guild.id);
+  }
+  await getSelection(interaction, q);
 }
 
 const command = new SlashCommandBuilder()
