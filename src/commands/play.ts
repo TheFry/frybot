@@ -14,7 +14,7 @@ async function getSelection(interaction: ChatInputCommandInteraction): Promise<A
   const searchData: yt.YTSearchResult [] = await yt.search(q, 5, YT_TOKEN);
   if(searchData === null) {
     await interaction.editReply('Failed to query youtube');
-    if(guild && guild.checkInitAudio() && !guild.checkPlayable()) {
+    if(guild && guild.checkInitAudio() && !guild.audio.player?.checkPlayable()) {
       guild.setIdleTimeout();
     }
     return [null, null];
@@ -38,7 +38,7 @@ async function getSelection(interaction: ChatInputCommandInteraction): Promise<A
     choice = await message.awaitMessageComponent({ time: 30_000, componentType: ComponentType.Button });
   } catch(err) {
     interaction.editReply({ content: 'Timeout waiting for input', components: [] })
-    if(guild && guild.checkInitAudio() && !guild.checkPlayable()) {
+    if(guild && guild.checkInitAudio() && !guild.audio.player?.checkPlayable()) {
       guild.setIdleTimeout();
     }
     return [null, null];
@@ -48,6 +48,9 @@ async function getSelection(interaction: ChatInputCommandInteraction): Promise<A
 }
 
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+  const q = interaction.options.getString('query');
+  await interaction.reply({ content: `Searcing youtube for ${q}` });
+
   const member = interaction.member as GuildMember;
   let guild = guildList[member.guild.id];
   if(!guild) {
@@ -56,13 +59,12 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   } else if(guild.checkTimeout()) {
     guild.setIdleTimeout(0);
   }
-  const q = interaction.options.getString('query');
-  await interaction.reply({ content: `Searcing youtube for ${q}` });
 
   let [songId, songName] = await getSelection(interaction);
   if(!songId || !songName) return;
   if(!guild.checkInitAudio()) {
-    await guild.initAudio(interaction);
+    let member = interaction.member as GuildMember;
+    await guild.initAudio(member);
   } 
   guild.addSong(songName, songId);
   interaction.editReply({content: `Added ${songName} to queue`, components: []})

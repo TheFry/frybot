@@ -9,9 +9,14 @@ import {
   getVoiceConnection,
   joinVoiceChannel,
   VoiceConnectionStatus, 
-  entersState} from '@discordjs/voice'
-import { ChatInputCommandInteraction, GuildMember } from 'discord.js';
+  entersState } from '@discordjs/voice';
+
+import { Mutex } from 'async-mutex';
+
+import { GuildMember } from 'discord.js';
 import fs from 'fs';
+
+
 
 const DEBUG = process.env['DEBUG'] ? true : false;
 const DEBUG_GUILD = '446523561537044480';
@@ -24,12 +29,11 @@ interface QueueEntry {
 }
 
 interface GuildAudio {
-  player: AudioPlayer;
+  player?: AudioPlayer;
   source: {
     readStream?: fs.ReadStream;
     audioResource?: AudioResource;
   }
-  idle: boolean;
   queue: QueueEntry [];
   channelId?: string;
   channelName?: string;
@@ -42,66 +46,69 @@ export class Guild {
   // Note that discordjs voice connections are not stored.
   // The library handles that for us.
   // youtubeId and song name persist to storage if enabled (not implemented yet)
-  guildId: string
-  idleTimeout: number
-  #audio: GuildAudio | null = null;
+  guildId: string;
+  idleTimeout: number;
   #idleTimer: NodeJS.Timeout | null = null;
+  initAudioMutex = new Mutex();  
+  audio: GuildAudio = {
+    queue: [],
+    source: {}
+  }
 
   constructor(guildId: string, idleTimeout: number = 30000) {
     this.guildId = DEBUG ? DEBUG_GUILD : guildId;
     this.idleTimeout = idleTimeout || 300000;  // Default timeout of 5 minutes
   }
 
-
   // init voice connection
-  async initAudio(interaction: ChatInputCommandInteraction): Promise<void> {
-    let connection = getVoiceConnection(`${this.guildId}`);
-    const member = interaction.member as GuildMember;
-    const voiceChannel = member.voice.channelId;
+  async initAudio(member: GuildMember, channelId: string | null = null): Promise<void> {
+    const release = await this.initAudioMutex.acquire();
+    let connection = getVoiceConnection(this.guildId);
+    const voiceChannel = channelId ? channelId : member.voice.channelId;
+
+    if(this.audio.player && connection) {
+      release();
+      return;
+    }
+
     if(!voiceChannel) {
-      interaction.editReply({ content: "You must join a voice channel before you can play music." });
+      release();
+      throw Error('ERROR initAudio - cannot get voice channel Id');
     }
 
     if(!connection) {
       connection = joinVoiceChannel({
-        channelId: `${member.voice.channel?.id}`,
-        guildId: `${this.guildId}`,
+        channelId: voiceChannel,
+        guildId: this.guildId,
         adapterCreator: member.guild.voiceAdapterCreator
       });
       await entersState(connection, VoiceConnectionStatus.Ready, 5000);
     }
 
     // init audio player
-    let player = null;
-    try {
-      player = createAudioPlayer({
-        behaviors: {
-          noSubscriber: NoSubscriberBehavior.Pause,
-        },
+    if(!this.audio.player) {
+      try {
+        this.audio.player = createAudioPlayer({
+          behaviors: {
+            noSubscriber: NoSubscriberBehavior.Pause,
+          },
+        });
+        await entersState(this.audio.player, AudioPlayerStatus.Idle, 5000);
+        connection.subscribe(this.audio.player);
+        console.log(`Guild ${this.guildId} - audio player initialized in idle state to channel ${member.voice.channel?.id} | ${member.voice.channel?.name}`);
+      } catch(err) {
+        connection.destroy();
+        if(this.audio.player) this.audio.player.stop();
+        this.audio.player = undefined;
+        release();
+        throw err;
+      }
+
+      this.audio.player.on(AudioPlayerStatus.Idle, () => {
+        this.playNext();
       });
-      await entersState(player, AudioPlayerStatus.Idle, 5000);
-      connection.subscribe(player);
-      console.log(`Guild ${this.guildId} - audio player initialized in idle state to channel ${member.voice.channel?.id} | ${member.voice.channel?.name}`);
-    } catch(err) {
-      connection.destroy();
-      if(player) player.stop();
-      throw err;
     }
-
-    // Note: we don't keep track of voice connection
-    // discord.js does this for us with getVoiceConnection
-    this.#audio = {
-      player: player,
-      source: {},
-      idle: true,
-      queue: [],
-      channelId: member.voice.channel?.id,
-      channelName: member.voice.channel?.name
-    }
-
-    player.on(AudioPlayerStatus.Idle, () => {
-      this.playNext();
-    });
+    release();
   }
 
 
@@ -112,23 +119,22 @@ export class Guild {
         song: ${songName}
         songId: ${youtubeId}
       `);
-    } else if(this.#audio === null) {
-      throw Error(`addSong error: player not initialized for guild ${this.guildId}`);
-    }
-    this.#audio.queue.push({
+    } 
+    
+    this.audio.queue.push({
       songName: songName,
       youtubeId: youtubeId
     });
 
     // If we just added to the queue and nothing is playing, start something.
-    if(!this.#audio.player.checkPlayable()) {
+    if(this.checkInitAudio() && this.audio.player?.state.status === AudioPlayerStatus.Idle) {
       this.playNext();
     }
   }
 
 
   getQueue(): Array<QueueEntry> {
-    return this.#audio?.queue || []
+    return this.audio?.queue || []
   }
 
 
@@ -136,19 +142,20 @@ export class Guild {
   // If the queue isn't empty, play the next song.
   // Otherwise, clean up all resources associated with guild.
   async playNext(): Promise<void> {
-    if(!this.#audio || !this.#audio.player) {
+    if(!this.checkInitAudio()) {
       throw Error(`playNext error: player not initialized for guild ${this.guildId}`);
     }
-    const song = this.#audio.queue.shift();
+    const song = this.audio.queue.shift();
     if(!song) {
       this.setIdleTimeout();
       return;
     }
 
-    this.#audio.source.readStream = await download(song.youtubeId, this.guildId);
-    this.#audio.source.audioResource = createAudioResource(this.#audio.source.readStream, { inlineVolume: true });
-    this.#audio.source.audioResource.volume?.setVolume(VOICE_VOLUME);
-    this.#audio.player.play(this.#audio.source.audioResource);
+    if(!this.audio.source) this.audio.source = {}
+    this.audio.source.readStream = await download(song.youtubeId, this.guildId);
+    this.audio.source.audioResource = createAudioResource(this.audio.source.readStream, { inlineVolume: true });
+    this.audio.source.audioResource.volume?.setVolume(VOICE_VOLUME);
+    this.audio.player?.play(this.audio.source.audioResource);
     console.log(`Guild ${this.guildId} - playing ${song.songName}`);
   }
 
@@ -157,8 +164,15 @@ export class Guild {
   cleanupAudio(): void {
     console.log(`Guild ${this.guildId} cleanup`);
     if(this.#idleTimer !== null) this.setIdleTimeout(0);
-    if(this.#audio && this.#audio.player) this.#audio.player.stop();
-    this.#audio = null;
+    if(this.audio && this.audio.player) this.audio.player.stop();
+    if(this.audio.source.readStream) this.audio.source.readStream.destroy();
+    this.audio.source.audioResource = undefined; 
+    this.audio.player = undefined;
+    this.audio.queue = [];
+    this.audio.source = {};
+    this.audio.channelId = undefined;
+    this.audio.channelName = undefined;
+    
     try {
       let channel = getVoiceConnection(this.guildId);
       if(channel) channel.destroy();
@@ -180,19 +194,17 @@ export class Guild {
     }
   }
 
+
   checkTimeout(): boolean {
     if (!this.#idleTimer) return true
     else return false
   }
 
-  checkInitAudio(): boolean {
-    if(this.#audio) return true;
-    else return false
-  }
 
-  checkPlayable(): boolean {
-    if(this.#audio?.player.checkPlayable()) return true
-    else return false 
+  checkInitAudio(): boolean {
+    let connection = getVoiceConnection(this.guildId);
+    if(this.audio.player && connection) return true;
+    else return false
   }
 }
 
