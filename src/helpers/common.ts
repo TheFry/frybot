@@ -1,3 +1,4 @@
+import { log } from 'console';
 import { Client } from 'discord.js';
 
 export class DiscordClient extends Client { commands: any };
