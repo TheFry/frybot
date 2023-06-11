@@ -32,7 +32,7 @@ export async function search(query: string, count: Number, key: string): Promise
 }
 
 
-export function download(songId: string, guildId: string): Promise<fs.ReadStream> {
+export function download(songId: string, path: string): Promise<fs.ReadStream> {
   let download = ytdl(songId, { filter: 'audioonly' });
   return new Promise((resolve, reject) => {
     let buff: any[] | null = [];
@@ -41,10 +41,10 @@ export function download(songId: string, guildId: string): Promise<fs.ReadStream
     })
     download.once('end', () => {
       if(buff) {
-        fs.writeFileSync(`./${guildId}`, Buffer.concat(buff));
+        fs.writeFileSync(path, Buffer.concat(buff));
       }
       buff = null;
-      resolve(fs.createReadStream(`./${guildId}`));
+      resolve(fs.createReadStream(path));
     });
     download.on('error', (err) => {
       console.log(err);
