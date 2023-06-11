@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, GuildMember } from 'discord.js';
 import { Guild, guildList } from '../helpers/guild';
 const ffmpeg = require('fluent-ffmpeg');
+import { rmSync } from 'fs';
 
 const DEBUG = process.env['DEBUG'] === "1" ? true : false
 
@@ -41,6 +42,7 @@ async function trimMP3(inputFilePath : string, startTime : TimeConverterReturn, 
     .on('end', async () => {
       console.log('Trimming and limiting size complete');
       await interaction.editReply({ content: `Here's your file`, files: [outputFilePath] });
+      rmSync(outputFilePath);
     })
     .on('error', (err : Error) => {
       console.error('Error trimming and limiting size of MP3:', err);
