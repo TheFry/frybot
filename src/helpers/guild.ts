@@ -208,9 +208,13 @@ export class Guild {
     if(this.audio.player && connection) return true;
     else return false
   }
+
+
   async setSoundBite(fileName : string){
     this.soundBiteFile = fileName;
   }
+
+  
   async getSoundBite(): Promise<string>{
     return this.soundBiteFile;
   }
