@@ -29,14 +29,14 @@ export function timeConverter(time : string): TimeConverterReturn {
   let seconds = "00";
   let str: string, num: number;
   if(time.length <= 3) {
-    seconds = time.length == 1? `0`+time : time.substring(0,2);
+    seconds = time.length == 1? `0`+time : time.substring(6, 8);
   } else if(time.length<=6) {
     minutes = time.length == 4? `0`+time[3]: time.substring(3,5);
     seconds = time.substring(0,2);
   } else if(time.length <= 8) {
-    hours = time.length == 7? `0`+time[6]: time.substring(6,8);
+    hours = time.length == 7? `0`+time[0]: time.substring(0, 2);
     minutes = time.substring(3,5);
-    seconds = time.substring(0,2);
+    seconds = time.substring(6, 8);
   }
   str = `${hours}:${minutes}:${seconds}`;
   num = parseInt(seconds)+ parseInt(minutes)*60 + parseInt(hours)*60*60;

@@ -18,6 +18,7 @@ interface modalData {
 
 async function trimVideo(modalData: modalData, outputFilePath: string, interaction: ChatInputCommandInteraction) {
   let ytStream = await yt.download(modalData.link);
+  console.log(modalData);
   await ffmpeg(ytStream)
     .setStartTime(modalData.startTime.str)
     .setDuration(modalData.duration)
