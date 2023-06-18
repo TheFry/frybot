@@ -65,7 +65,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
 }
 
 const command = new SlashCommandBuilder()
-  .setName(`sbsearch`)
+  .setName(DEBUG ? 'dev-sbsearch' : 'sbsearch')
   .setDescription('Search youtube for a video and extract a sound bite from it')
   .addStringOption(option => 
     option.setName('query')

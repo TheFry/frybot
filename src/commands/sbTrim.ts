@@ -71,7 +71,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
 }
 
 const command = new SlashCommandBuilder()
-  .setName(`sbtrim`)
+  .setName(DEBUG ? 'dev-sbtrim' : 'sbtrim')
   .setDescription('Search youtube for a video and extract a sound bite from it')
   .addStringOption(option => 
     option.setName('starttime')
