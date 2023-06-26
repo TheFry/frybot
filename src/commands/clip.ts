@@ -1,6 +1,18 @@
 const ffmpeg = require('fluent-ffmpeg');
 import { rmSync } from 'fs';
-import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ChatInputCommandInteraction, GuildMember, ModalBuilder, TextInputBuilder, TextInputStyle, ModalSubmitInteraction, ButtonComponent, ButtonInteraction, ModalComponentData, messageLink } from 'discord.js';
+import { SlashCommandBuilder, 
+  ActionRowBuilder, 
+  ButtonBuilder, 
+  ButtonStyle, 
+  ComponentType, 
+  ChatInputCommandInteraction, 
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ModalSubmitInteraction,
+  ButtonInteraction,
+  ModalMessageModalSubmitInteraction } from 'discord.js';
+
 import * as yt from '../helpers/youtube';
 import { timeConverter, TimeConverterReturn } from '../helpers/common';
 import { randomBytes } from 'crypto';
@@ -38,7 +50,7 @@ async function trimVideo(modalData: ModalData, outputFilePath: string, interacti
 }
 
 
-async function getModalData(interaction: ChatInputCommandInteraction | ButtonInteraction, videoData: yt.YTSearchResult): Promise<ModalData | null> {
+async function getModalData(interaction: ButtonInteraction, videoData: yt.YTSearchResult): Promise<ModalData | null> {
   const startTimeId = 'startTime';
   const durationId = 'duration';
   const urlId = 'url';
@@ -80,18 +92,16 @@ async function getModalData(interaction: ChatInputCommandInteraction | ButtonInt
   )
   
   let modalFilter = (interaction: ModalSubmitInteraction) => interaction.customId === modalId; 
-  let submission: ModalSubmitInteraction;
+  let submission: ModalMessageModalSubmitInteraction;
   await interaction.showModal(modal);
   try {
-    submission = await interaction.awaitModalSubmit({ time: 300_000, filter: modalFilter });
+    submission = await interaction.awaitModalSubmit({ time: 300_000, filter: modalFilter }) as ModalMessageModalSubmitInteraction;
   } catch(err) {
     interaction.editReply({ content: 'Timeout waiting for input', components: [] });
     return null;
   }
-
-  await submission.reply('Modal Data Received');
-  await submission.deleteReply();  
   
+  await submission.update('Trimming Video...');
   let startTime = timeConverter(submission.fields.getTextInputValue(startTimeId));
   let duration = Number(submission.fields.getTextInputValue(durationId));
   let link = submission.fields.getTextInputValue(urlId);
@@ -111,41 +121,48 @@ async function getSelection(interaction: ChatInputCommandInteraction, query: str
   const rows: ActionRowBuilder<ButtonBuilder> [] = [];
   rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId(`next`)
-      .setLabel(`Next`)
-      .setStyle(ButtonStyle.Primary)
-    )
-  );
-  rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
       .setCustomId(`select`)
-      .setLabel(`Select`)
-      .setStyle(ButtonStyle.Primary)
-    )
-  );
+      .setLabel(`Select Video`)
+      .setStyle(ButtonStyle.Success),
 
-  let selectedVideo = 0;
-  let current_video = 0;
-  let button = null;
-  while (button == null && current_video < searchData.length) {
-    const message = await interaction.editReply({ content: `https://www.youtube.com/watch?v=${searchData[current_video].id}`, components: rows });
+    new ButtonBuilder()
+      .setCustomId(`next`)
+      .setLabel(`Next Video`)
+      .setStyle(ButtonStyle.Secondary),
+
+    new ButtonBuilder()
+      .setCustomId(`cancel`)
+      .setLabel(`Cancel`)
+      .setStyle(ButtonStyle.Danger)
+  ));
+  
+
+
+  let button: ButtonInteraction | null = null;
+  let selectedVideo: yt.YTSearchResult | null = null;
+  let message = await interaction.editReply({ content: `https://www.youtube.com/watch?v=${searchData[0].id}`, components: rows });
+  for(let i = 0; i < searchData.length; i++) {
     try {
       button = await message.awaitMessageComponent({ time: 120_000, componentType: ComponentType.Button });
-      if(button && button.customId == "next"){
-        button = null;
+      if(button.customId == "next"){
+        if(i + 1 < searchData.length) {
+          button.update({ content: `https://www.youtube.com/watch?v=${searchData[i + 1].id}`, components: rows });
+        } else {
+          interaction.editReply({ content: 'No video selected. Try a differnt search or use a direct url', components: [] });
+          return null;
+        }
+      } else if(button.customId == "select") {
+        selectedVideo = searchData[i]; 
+        break;
+      } else {
+        interaction.editReply({ content: '#cancelled', components: [] })
       }
     } catch(err) {
       interaction.editReply({ content: 'Timeout waiting for input', components: [] })
       return null;
     }
-    selectedVideo = current_video;
-    current_video++;
-  } 
-  if(button == null) {
-    interaction.editReply({ content: 'No video selected', components: [] })
-    return null;
   }
-  return [searchData[selectedVideo], button];
+  return [selectedVideo as yt.YTSearchResult, button as ButtonInteraction];
 }
 
 
