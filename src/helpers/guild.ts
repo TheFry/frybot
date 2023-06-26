@@ -48,7 +48,6 @@ export class Guild {
   // youtubeId and song name persist to storage if enabled (not implemented yet)
   guildId: string;
   idleTimeout: number;
-  soundBiteFile: string;
   #idleTimer: NodeJS.Timeout | null = null;
   initAudioMutex = new Mutex();  
   audio: GuildAudio = {
@@ -59,7 +58,6 @@ export class Guild {
   constructor(guildId: string, idleTimeout: number = 30000) {
     this.guildId = DEBUG ? DEBUG_GUILD : guildId;
     this.idleTimeout = idleTimeout || 300000;  // Default timeout of 5 minutes
-    this.soundBiteFile = "";
   }
 
   // init voice connection
@@ -207,16 +205,6 @@ export class Guild {
     let connection = getVoiceConnection(this.guildId);
     if(this.audio.player && connection) return true;
     else return false
-  }
-
-
-  async setSoundBite(fileName : string){
-    this.soundBiteFile = fileName;
-  }
-
-  
-  async getSoundBite(): Promise<string>{
-    return this.soundBiteFile;
   }
 }
 
