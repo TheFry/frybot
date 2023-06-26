@@ -201,11 +201,11 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
 
 
 const command = new SlashCommandBuilder()
-  .setName(DEBUG ? 'dev-sbsearch' : 'sbsearch')
-  .setDescription('Search youtube for a video and extract a sound bite from it')
+  .setName(DEBUG ? 'dev-clip' : 'clip')
+  .setDescription('Clip a youtube video')
   .addStringOption(option => 
     option.setName('query')
-      .setDescription('The sound to search youtube for')
+      .setDescription('Youtube search query OR video url')
       .setRequired(true)
   )
 
