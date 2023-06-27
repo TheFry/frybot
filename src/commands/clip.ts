@@ -95,7 +95,7 @@ async function getModalData(interaction: ButtonInteraction, videoData: yt.YTSear
   let submission: ModalMessageModalSubmitInteraction;
   await interaction.showModal(modal);
   try {
-    submission = await interaction.awaitModalSubmit({ time: 300_000, filter: modalFilter }) as ModalMessageModalSubmitInteraction;
+    submission = await interaction.awaitModalSubmit({ time: 600_000, filter: modalFilter }) as ModalMessageModalSubmitInteraction;
   } catch(err) {
     interaction.editReply({ content: 'Timeout waiting for input', components: [] });
     return null;
