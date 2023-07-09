@@ -146,23 +146,28 @@ async function getSelection(interaction: ChatInputCommandInteraction, query: str
       button = await message.awaitMessageComponent({ time: 120_000, componentType: ComponentType.Button });
       if(button.customId == "next"){
         if(i + 1 < searchData.length) {
-          button.update({ content: `https://www.youtube.com/watch?v=${searchData[i + 1].id}`, components: rows });
+          await button.update({ content: `https://www.youtube.com/watch?v=${searchData[i + 1].id}`, components: rows });
         } else {
-          interaction.editReply({ content: 'No video selected. Try a differnt search or use a direct url', components: [] });
+          await interaction.editReply({ content: 'No video selected. Try a differnt search or use a direct url', components: [] });
           return null;
         }
       } else if(button.customId == "select") {
         selectedVideo = searchData[i]; 
         break;
       } else {
-        interaction.editReply({ content: '#cancelled', components: [] })
+        await interaction.editReply({ content: '#cancelled', components: [] });
+        return null;
       }
     } catch(err) {
-      interaction.editReply({ content: 'Timeout waiting for input', components: [] })
+      await interaction.editReply({ content: 'Timeout waiting for input', components: [] })
       return null;
     }
   }
-  return [selectedVideo as yt.YTSearchResult, button as ButtonInteraction];
+
+  if(selectedVideo && button) {
+    return [selectedVideo, button];
+  }
+  return null;
 }
 
 
