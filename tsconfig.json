@@ -2,6 +2,7 @@
   "extends": "@tsconfig/node18/tsconfig.json",
   "compilerOptions": {
     "strict": true,
+    "target": "ES6",
     "noImplicitAny": true,
     "allowJs": true,
     "outDir": "./built"
