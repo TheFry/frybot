@@ -3,6 +3,7 @@ import ytdl from '@distube/ytdl-core';
 import fs, { ReadStream } from 'fs';
 
 const SEARCH_ENDPOINT = 'https://www.googleapis.com/youtube/v3/search';
+const LIST_ENDPOINT = 'https://www.googleapis.com/youtube/v3/videos';
 
 export interface YTSearchResult {
   name: string,
@@ -26,6 +27,28 @@ export async function search(query: string, count: Number, key: string): Promise
     vidData.push({
       name: item.snippet.title,
       id: item.id.videoId,
+    })
+  }
+  return vidData;
+}
+
+
+export async function list(ids: string, key: string): Promise<Array<YTSearchResult>> {
+  const res = await axios.get(LIST_ENDPOINT, {
+    headers: { "Content-Type": "application/json" },
+    params: {
+      id: ids,
+      key: key,
+      type: 'video',
+      part: 'snippet,id',
+    }
+  });
+
+  const vidData: Array<YTSearchResult> = [];
+  for(const item of res.data.items) {
+    vidData.push({
+      name: item.snippet.title,
+      id: item.id,
     })
   }
   return vidData;

@@ -128,7 +128,7 @@ export class Guild {
 
     // If we just added to the queue and nothing is playing, start something.
     if(this.checkInitAudio() && this.audio.player?.state.status === AudioPlayerStatus.Idle) {
-      this.playNext();
+      await this.playNext();
     }
   }
 
