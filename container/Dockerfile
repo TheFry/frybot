@@ -1,8 +1,8 @@
 FROM node:18-alpine
 
 WORKDIR /app
-RUN apk add --no-cache ffmpeg
-COPY package.* tsconfig.json src/ .
+RUN apk add --no-cache ffmpeg python3 alpine-sdk
+COPY package.* tsconfig.json src/ ./
 RUN npm install && \
     npx tsc && \
     npm prune --production && \
