@@ -31,7 +31,7 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<s
   try {
     submission = await interaction.awaitModalSubmit({ time: 600_000, filter: modalFilter }) as ModalMessageModalSubmitInteraction;
   } catch(err) {
-    interaction.editReply({ content: 'Timeout waiting for input', components: [] });
+    console.log(err);
     return '';
   }
   
