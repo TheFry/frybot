@@ -1,6 +1,7 @@
 import loadCommands from './helpers/load-commands';
 import { Client, Collection, GatewayIntentBits, Interaction, InteractionEditReplyOptions } from 'discord.js';
 import { checkVars, DiscordClient } from './helpers/common';
+import { addInteraction } from './helpers/interactions';
 
 checkVars();
 const DC_TOKEN = process.env['DC_TOKEN'] || '';
@@ -18,6 +19,7 @@ client.once('ready', () => {
 
 client.on('interactionCreate', async (interaction: Interaction) => {
 	if (!interaction.isChatInputCommand()) return;
+	await addInteraction(interaction);
 	const interactionClient = interaction.client as DiscordClient;
 	const command: any = interactionClient.commands.get(interaction.commandName);
 
