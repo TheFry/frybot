@@ -128,9 +128,9 @@ export class VoiceBot {
   async releaseChannel(markFree = false) {
     const redis_watchedKey = 'frybot:reserved-channels';
     const redis_freeKey = 'frybot:free-channels';
-		await redisClient.sRem(redis_watchedKey, this.channelId)
+    await redisClient.sRem(redis_watchedKey, this.channelId)
     if(markFree) await redisClient.rPush(redis_freeKey, this.channelId)
-	}
+  }
 
 
   async addPlayerHandlers() {
