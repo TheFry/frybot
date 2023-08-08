@@ -36,7 +36,7 @@ async function reserveChannels() {
 
 	console.log(`Looking for open channels...`);
 	while(watchQueues) {
-		const response = await redisClient.brPop(redis_freeKey, 0);
+    const response = await redisClient.executeIsolated(isolatedClient => isolatedClient.brPop(redis_freeKey, 0));
 		if(!response) continue;  // Make typescript happy. This should always return something
 		const channelId = response.element;
 		const wasAdded = await redisClient.sAdd(redis_watchedKey, channelId);
