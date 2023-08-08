@@ -1,7 +1,6 @@
 import { createClient, defineScript } from "redis";
+import { Message } from "./message_queue";
 
-
-// Server side Scripts
 
 // Used to atomically check if a channel is being watched by a worker bot
 // If it isn't, add it 
@@ -17,12 +16,27 @@ const checkIfWatched = defineScript({
 })
 
 
+const enqueue = defineScript({
+  NUMBER_OF_KEYS: 2,
+  SCRIPT: `
+    redis.call("JSON.SET", KEYS[2], ".", ARGV[2])
+    local cmd = "LPUSH"
+    if ARGV[3] == "false" then
+      cmd = "LPUSH"
+    end
+    redis.call(cmd, KEYS[1], ARGV[1])
+  `,
+  transformArguments(queueKey: string, entryKey: string, uuid: string, message: Message, front = false) { return [queueKey, entryKey, uuid, JSON.stringify(message), front.toString()] }
+})
+
+
 const REDIS_HOST = "redis.service.consul";
 
 export const redisClient = createClient({ 
   url: `redis://${REDIS_HOST}`, 
   scripts: {
-    checkIfWatched: checkIfWatched 
+    checkIfWatched: checkIfWatched, 
+    enqueue: enqueue
   } 
 });
 
