@@ -65,7 +65,7 @@ export class VoiceBot {
     this.guildId = options.guildId;
     this.channelId = options.channelId;
     this.channelName = options.channelName;
-    this.idleTimeout = options.idleTimeout || 300000;  // Default timeout of 5 minutes
+    this.idleTimeout = options.idleTimeout || 30;  // Default timeout of 5 minutes
     this.audioResources = options.audioResources;
     this.isConnected = options.isConnected || true;
     this.redis_queueKey = `discord:channels:${this.channelId}:queue`;

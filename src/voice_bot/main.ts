@@ -67,7 +67,7 @@ async function reserveChannels() {
 			voicebotList[channelId] = await VoiceBot.init({ 
 				channelId,
 				guildId,
-				idleTimeout: 30000,
+				idleTimeout: 30,
 				voiceAdapter: (await client.guilds.fetch(guildId)).voiceAdapterCreator
 			 })
 		} catch(err) {
