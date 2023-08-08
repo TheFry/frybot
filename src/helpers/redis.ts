@@ -21,10 +21,10 @@ const enqueue = defineScript({
   SCRIPT: `
     redis.call("JSON.SET", KEYS[2], ".", ARGV[2])
     local cmd = "LPUSH"
-    if ARGV[3] == "false" then
-      cmd = "LPUSH"
+    if ARGV[3] == "true" then
+      cmd = "RPUSH"
     end
-    redis.call(cmd, KEYS[1], ARGV[1])
+    return redis.call(cmd, KEYS[1], ARGV[1])
   `,
   transformArguments(queueKey: string, entryKey: string, uuid: string, message: Message, front = false) { return [queueKey, entryKey, uuid, JSON.stringify(message), front.toString()] }
 })
