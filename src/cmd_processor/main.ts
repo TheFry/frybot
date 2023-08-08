@@ -1,7 +1,8 @@
-import loadCommands from './helpers/load-commands';
+import loadCommands from '../helpers/load-commands';
 import { Client, Collection, GatewayIntentBits, Interaction, InteractionEditReplyOptions } from 'discord.js';
-import { checkVars, DiscordClient } from './helpers/common';
-import { addInteraction } from './helpers/interactions';
+import { checkVars, DiscordClient } from '../helpers/common';
+import { addInteraction } from '../helpers/interactions';
+import * as redis from '../helpers/redis';
 
 checkVars();
 const DC_TOKEN = process.env['DC_TOKEN'] || '';
@@ -9,13 +10,23 @@ const DC_CLIENT = process.env['DC_CLIENT'] || '';
 const G_ID = process.env['G_ID'] || '';
 
 const client: DiscordClient = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] }) as DiscordClient;
-client.login(DC_TOKEN);
 
-client.once('ready', () => {
+
+redis.connect()
+	// .then(() => { redis.connect(); })
+	.then(() => { client.login(DC_TOKEN) })
+	.catch((err) => { 
+		console.log(err);
+		process.exit(1);
+	})
+
+
+client.once('ready', async () => {
 	console.log('Client logged in!');
 	client.commands = new Collection();
-	loadCommands(client, DC_TOKEN, DC_CLIENT, G_ID);
+	loadCommands(client, DC_TOKEN, DC_CLIENT, '../cmd_processor/commands', G_ID);
 });
+
 
 client.on('interactionCreate', async (interaction: Interaction) => {
 	if (!interaction.isChatInputCommand()) return;

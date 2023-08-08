@@ -13,8 +13,8 @@ import { SlashCommandBuilder,
   ButtonInteraction,
   ModalMessageModalSubmitInteraction } from 'discord.js';
 
-import * as yt from '../helpers/youtube';
-import { timeConverter, TimeConverterReturn } from '../helpers/common';
+import * as yt from '../../helpers/youtube';
+import { timeConverter, TimeConverterReturn } from '../../helpers/common';
 import { randomBytes } from 'crypto';
 
 const YT_TOKEN = process.env['YT_TOKEN'] as string;

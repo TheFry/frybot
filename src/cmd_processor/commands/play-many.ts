@@ -1,8 +1,7 @@
 import { ActionRowBuilder, ButtonInteraction, ChatInputCommandInteraction, GuildMember, ModalBuilder, ModalData, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
-import { Guild } from '../helpers/guild';
-import { guildList } from "../helpers/guild";
 import { randomBytes } from "crypto";
-import * as yt from '../helpers/youtube';
+import * as yt from '../../helpers/youtube';
+import { redisClient } from "../../helpers/redis";
 
 const DEBUG = process.env["DEBUG"] === "1" ? true : false;
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
@@ -64,25 +63,27 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<s
 
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const member = interaction.member as GuildMember;
-  let guild = guildList[member.guild.id];
-  if(!guild) {
-    guild = new Guild(member.guild.id);
-    guildList[member.guild.id] = guild;
-  } else if(guild.checkTimeout()) {
-    guild.setIdleTimeout(0);
+  const channelId = member.voice.channelId;
+  const redis_watchedKey = 'frybot:watched-channels';
+  const redis_freeKey = 'frybot:free-channels';
+  
+  if(!channelId) {
+    await interaction.editReply('You must be in a voice channel to play music!');
+    return;
   }
-
-  if(!guild.checkInitAudio()) {
-    let member = interaction.member as GuildMember;
-    await guild.initAudio(member);
-  } 
 
   let ids = (await getModalData(interaction));
   if(ids === '') return;
+
+    // Throw the guildId in redis with the channel id as a key
+  // Voicebots use this rather than querying discord for it
+  await redisClient.set(`discord:channel:${channelId}:guild-id`, member.guild.id, { NX: true });
+  await redisClient.checkIfWatched(redis_watchedKey, redis_freeKey, channelId);
+
   let videos = await yt.list(ids, YT_TOKEN);
-  for(let video of Object.values(videos)) {
-    await guild?.addSong(video.name, video.id);
-  }
+  // for(let video of Object.values(videos)) {
+  //   await guild?.addSong(video.name, video.id);
+  // }
 }
 
 const command = new SlashCommandBuilder()
