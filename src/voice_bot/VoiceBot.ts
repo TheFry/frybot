@@ -16,7 +16,7 @@ import { InternalDiscordGatewayAdapterCreator, Snowflake } from 'discord.js';
 import { client } from './main';
 import { download } from '../helpers/youtube';
 import { redisClient } from '../helpers/redis';
-import { dequeue, addSong } from '../helpers/playlist';
+import { getSong, addSong } from '../helpers/playlist';
 
 const VOICE_VOLUME = 0.28
 
@@ -162,7 +162,7 @@ export class VoiceBot {
   async playNext(): Promise<void> {
     let retries = 3;
 
-    let entry = await dequeue(this.channelId, this.idleTimeout);
+    let entry = await getSong(this.channelId, this.idleTimeout);
     if(!entry) {
       await this.cleanupAudio();
       await this.releaseChannel();
