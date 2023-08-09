@@ -16,7 +16,7 @@ import { InternalDiscordGatewayAdapterCreator, Snowflake } from 'discord.js';
 import { client } from './main';
 import { download } from '../helpers/youtube';
 import { redisClient } from '../helpers/redis';
-import { dequeue, enqueue } from '../helpers/queue';
+import { dequeue, addSong } from '../helpers/playlist';
 
 const VOICE_VOLUME = 0.28
 
@@ -191,7 +191,7 @@ export class VoiceBot {
       this.audioResources.discordResource.volume?.setVolume(VOICE_VOLUME);
       this.audioResources.player.play(this.audioResources.discordResource);
     } catch(err) {
-      await enqueue(this.channelId, entry, true);
+      await addSong(this.channelId, [entry], true);
       throw err;
     }
 

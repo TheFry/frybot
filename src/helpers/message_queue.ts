@@ -14,6 +14,13 @@ export interface EnqueueResponse {
   error?: unknown;
 }
 
+
+export interface DequeueResponse {
+  uuid?: string;
+  message?: Message;
+  error?: unknown;
+}
+
 export interface EnqueueOptions {
   queueKey: string;
   entryKey: string;
@@ -41,22 +48,22 @@ export async function enqueue(queueKey: string, messages: Message[], inFront = f
 }
 
 
-export async function dequeue(queueKey: string, timeout?: number): Promise<Message | void> {
-  let uuid: string | null | undefined;
+export async function dequeue(queueKey: string, timeout?: number): Promise<DequeueResponse> {
+  let uuid: string | null = null;
   try {
     if(!timeout) {
       uuid = await redisClient.rPop(queueKey);
     } else {
-      uuid = (await redisClient.executeIsolated(isolatedClient => isolatedClient.brPop(queueKey, timeout)))?.element;
+      let res = await redisClient.executeIsolated(isolatedClient => isolatedClient.brPop(queueKey, timeout));
+      if(res) uuid = res.element;
     }
   } catch(err) {
-    console.log(`Dequeue err on key ${queueKey} - ${err}`);
-    return;
+    return { error: err };
   }
 
-  if(!uuid) return;
-  let entryKey = `${queueKey}-entry:${uuid}`;
+  if(!uuid) return { };
 
+  let entryKey = `${queueKey}-entry:${uuid}`;
   let res = []; 
   try {
     res = await redisClient.multi()
@@ -64,14 +71,15 @@ export async function dequeue(queueKey: string, timeout?: number): Promise<Messa
       .del(entryKey)
       .exec()
   } catch(err) {
-    console.log(`Dequeue err on key ${entryKey} - ${err}`);
-    return;
+    return {
+      uuid: uuid,
+      error: err
+    }
   }
 
-
-  if(res[0] && res[1] && res[1].toString() === '0') {
-    console.log(`Error deleting key ${entryKey}`);
-  } else if(res[0]) {
-    return res[0] as Message;
-  } 
+  return {
+    uuid: uuid,
+    message: res[0] as Message,
+    error: res[1] as number <= 0 ? new Error(`Error deleting key ${entryKey}. It doesn't exist.`) : undefined
+  }
 }

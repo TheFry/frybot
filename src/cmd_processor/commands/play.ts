@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ChatInputCommandInteraction, GuildMember, Snowflake } from 'discord.js';
 import * as yt from '../../helpers/youtube';
 import { redisClient } from '../../helpers/redis';
-import { QueueEntry, enqueue } from '../../helpers/queue';
+import { addSong, PlaylistEntry } from '../../helpers/playlist';
 
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
 const MAX_BTN_TEXT = 80;
@@ -41,9 +41,6 @@ async function getSelection(interaction: ChatInputCommandInteraction): Promise<A
 }
 
 
-
-
-
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const q = interaction.options.getString('query');
   const member = interaction.member as GuildMember;
@@ -60,7 +57,6 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   let [songId, songName] = await getSelection(interaction);
   if(!songId || !songName) return;
   
-
   // Throw the guildId in redis with the channel id as a key
   // Voicebots use this rather than querying discord for it
   await redisClient.set(`discord:channel:${channelId}:guild-id`, member.guild.id, { NX: true });
@@ -68,13 +64,13 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   // Add channel to free-channels if it isn't already in watched-channels
   await redisClient.checkIfWatched(redis_watchedKey, redis_freeKey, channelId);
 
-  const entry: QueueEntry = {
+  const entry: PlaylistEntry = {
     youtubeVideoId: songId,
     youtubeVideoTitle: songName,
     interactionId: interaction.id
   }
 
-  await enqueue(channelId, entry);
+  await addSong(channelId, [entry]);
 
   interaction.editReply({content: `Added ${songName} to queue`, components: []})
 }
