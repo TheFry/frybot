@@ -11,6 +11,7 @@ export interface EnqueueResponseStatus {
 export interface EnqueueResponse {
   status: EnqueueResponseStatus | null;
   message: Message;
+  error?: unknown;
 }
 
 export interface EnqueueOptions {
@@ -31,11 +32,10 @@ export async function enqueue(queueKey: string, messages: Message[], inFront = f
     try {
       status = await redisClient.enqueue({ queueKey, entryKey, uuid, message, inFront });
     } catch(err) {
-      console.log(`Enqueue err on keys ${queueKey} / ${entryKey}\n${err}`);
-      responses.push({ status: null, message: message });
+      responses.push({ status: null, message: message, error: err });
       continue;
     }
-    responses.push({ status, message })
+    responses.push({ status, message });
   }
   return responses;
 }
