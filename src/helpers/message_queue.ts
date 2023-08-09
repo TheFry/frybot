@@ -1,36 +1,43 @@
-import { Snowflake } from 'discord.js';
 import { nanoid } from 'nanoid/non-secure';
 import { redisClient } from './redis';
 
-
-export interface QueueEntry {
-  youtubeVideoId: string;
-  youtubeVideoTitle: string;
-  interactionId: Snowflake;
-}
-
-export interface QueueOptions {
-  priority?: number,
-  delay?: number,
-  ttr?: number,
-}
-
 export interface Message { [key: string]: any }
 
+export interface EnqueueResponseStatus {
+  jsonSet: string | object;
+  listPush: number;
+}
 
-export async function enqueue(queueKey: string, messages: Message[], front = false): Promise<0 | 1> {
+export interface EnqueueResponse {
+  status: EnqueueResponseStatus | null;
+  message: Message;
+}
+
+export interface EnqueueOptions {
+  queueKey: string;
+  entryKey: string;
+  uuid: string;
+  message: Message;
+  inFront?: boolean;
+}
+
+
+export async function enqueue(queueKey: string, messages: Message[], inFront = false) {
+  let responses: Array<EnqueueResponse> = [];
   for(let message of messages) {
     let uuid = nanoid();
-    let entryKey = `${queueKey}-entry:${uuid}`
-    
+    let entryKey = `${queueKey}-entry:${uuid}`;
+    let status: EnqueueResponseStatus;
     try {
-      await redisClient.enqueue(queueKey, entryKey, uuid, message, front);
+      status = await redisClient.enqueue({ queueKey, entryKey, uuid, message, inFront });
     } catch(err) {
       console.log(`Enqueue err on keys ${queueKey} / ${entryKey}\n${err}`);
-      return 1;
+      responses.push({ status: null, message: message });
+      continue;
     }
+    responses.push({ status, message })
   }
-  return 0;
+  return responses;
 }
 
 
