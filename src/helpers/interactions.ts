@@ -1,8 +1,14 @@
 import { BaseInteraction, Snowflake } from "discord.js"
 
+export interface DiscordResponse {
+  message: string;
+  interactionId: Snowflake
+}
+
 interface Interactions {
   [interaction: Snowflake]: BaseInteraction;
 }
+
 
 const INTERACTION_TIMEOUT = 1000 * 825; // Discord interactions expire after 900 seconds. This gives us 25s of padding
 export const interactions: Interactions = {  }
