@@ -1,6 +1,8 @@
 import { createClient, defineScript } from "redis";
 import { EnqueueOptions, EnqueueResponseStatus } from "./message_queue";
 
+const REDIS_URL = process.env['REDIS_URL'] || 'redis://localhost:6379';
+
 
 // Used to atomically check if a channel is being watched by a worker bot
 // If it isn't, add it 
@@ -61,22 +63,24 @@ const enqueue = defineScript({
 })
 
 
-const REDIS_HOST = "redis.service.consul";
+// I created a client just for the type definition. It's really just wasted memory
+export let redisClient = createClient({ url: REDIS_URL, scripts: { enqueue: enqueue, checkIfWatched: checkIfWatched } });
 
-export const redisClient = createClient({ 
-  url: `redis://${REDIS_HOST}`, 
-  scripts: {
-    checkIfWatched: checkIfWatched, 
-    enqueue: enqueue
-  } 
-});
 
-redisClient.on('error', err => console.log('Redis Client Error', err));
-
-export async function connect() {
+export async function connect(url: string = REDIS_URL) {
+  redisClient = createClient({
+    url: url,
+    scripts: {
+      enqueue: enqueue,
+      checkIfWatched: checkIfWatched
+    }
+  })
+  redisClient.on('error', err => console.log('Redis Client Error', err));
   await redisClient.connect();
 }
+
 
 export async function disconnect() {
   await redisClient.quit();
 }
+
