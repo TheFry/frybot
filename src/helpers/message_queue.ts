@@ -51,7 +51,7 @@ export async function enqueue(queueKey: string, messages: Message[], inFront = f
 export async function dequeue(queueKey: string, timeout?: number): Promise<DequeueResponse> {
   let uuid: string | null = null;
   try {
-    if(!timeout) {
+    if(timeout === undefined) {
       uuid = await redisClient.rPop(queueKey);
     } else {
       let res = await redisClient.executeIsolated(isolatedClient => isolatedClient.brPop(queueKey, timeout));
