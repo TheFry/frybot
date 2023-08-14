@@ -90,7 +90,8 @@ async function reserveChannels(redisClient: Redis) {
 				console.log(`Error running first playNext - ${err}`)
 				bot.cleanupAudio();
 				releaseChannel(channelId);
-				delete connectedGuilds[guildId as string]
+				delete connectedGuilds[guildId as string];
+				delete voicebotList[channelId];
 			})
 
 	} 
