@@ -54,6 +54,15 @@ export async function enqueue(queueKey: string, messages: Message[], inFront = f
 
 export async function dequeue(queueKey: string, count: number, timeout?: number): Promise<DequeueResponse[]> {
   let responses: DequeueResponse [] = [];
+  
+  if(count < 0) {
+    try {
+      count = await redisClient?.llen(queueKey) || 0;
+    } catch(err) {
+      count = 0;
+    }
+  }
+
   while(count > 0) {
     let uuid: string | null = null;
     try {
