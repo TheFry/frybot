@@ -26,13 +26,13 @@ export async function addSong(channelId: Snowflake, songs: PlaylistEntry[], inFr
 
 export async function getSong(channelId: Snowflake, timeout = 30): Promise<PlaylistEntry | void> {
   let queueKey = `discord:channel:${channelId}:queue`
-  let response = await queue.dequeue(queueKey, timeout);
-  if(!response) return;
+  let response = await queue.dequeue(queueKey, 1, timeout);
+  if(response.length === 0) return;
 
-  if(response.error) {
-    `Error getting song for channel ${channelId} - ${response.error}`;
+  if(response[0].error) {
+    `Error getting song for channel ${channelId} - ${response[0].error}`;
     return;
   }
 
-  if(response.message) return response.message as PlaylistEntry;
+  if(response[0].message) return response[0].message as PlaylistEntry;
 }

@@ -52,38 +52,50 @@ export async function enqueue(queueKey: string, messages: Message[], inFront = f
 }
 
 
-export async function dequeue(queueKey: string, timeout?: number): Promise<DequeueResponse> {
-  let uuid: string | null = null;
-  try {
-    if(timeout === undefined) {
-      uuid = await redisClient?.rpop(queueKey) as string | null;
-    } else {
-      let res = await redisClient?.duplicate().brpop(queueKey, timeout);
-      if(res) uuid = res[1];
+export async function dequeue(queueKey: string, count: number, timeout?: number): Promise<DequeueResponse[]> {
+  let responses: DequeueResponse [] = [];
+  while(count > 0) {
+    let uuid: string | null = null;
+    try {
+      if(timeout === undefined) {
+        uuid = await redisClient?.rpop(queueKey) as string | null;
+      } else {
+        let res = await redisClient?.duplicate().brpop(queueKey, timeout);
+        if(res) uuid = res[1];
+      }
+    } catch(err) {
+      responses.push({ error: err });
+      count--;
+      continue;
     }
-  } catch(err) {
-    return { error: err };
-  }
-
-  if(!uuid) return { };
-
-  let entryKey = `${queueKey}-entry:${uuid}`;
-  let res = []; 
-  try {
-    res = await redisClient?.multi()
-      .call('JSON.GET', entryKey)
-      .del(entryKey)
-      .exec() as any
-  } catch(err) {
-    return {
+  
+    if(!uuid) {
+      break;
+    };
+  
+    let entryKey = `${queueKey}-entry:${uuid}`;
+    let res = []; 
+    try {
+      res = await redisClient?.multi()
+        .call('JSON.GET', entryKey)
+        .del(entryKey)
+        .exec() as any
+    } catch(err) {
+      responses.push({
+        uuid: uuid,
+        error: err
+      });
+      count--;
+      continue;
+    }
+  
+    responses.push({
       uuid: uuid,
-      error: err
-    }
+      message: JSON.parse(res[0][1]) as Message,
+      error: res[1] as number <= 0 ? new Error(`Error deleting key ${entryKey}. It doesn't exist.`) : undefined
+    });
+    count--;
   }
 
-  return {
-    uuid: uuid,
-    message: JSON.parse(res[0][1]) as Message,
-    error: res[1] as number <= 0 ? new Error(`Error deleting key ${entryKey}. It doesn't exist.`) : undefined
-  }
+  return responses;
 }
