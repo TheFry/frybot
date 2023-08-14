@@ -10,7 +10,8 @@ export interface PlaylistEntry {
 
 
 export async function addSong(channelId: Snowflake, songs: PlaylistEntry[], inFront = false): Promise<Array<DiscordResponse>> {
-  let responses = await queue.enqueue(channelId, songs, inFront);
+  let queueKey = `discord:channel:${channelId}:queue`
+  let responses = await queue.enqueue(queueKey, songs, inFront);
   let discordResponses: DiscordResponse [] = [];
   for(let response of responses) {
     let status = response.status;
@@ -24,7 +25,8 @@ export async function addSong(channelId: Snowflake, songs: PlaylistEntry[], inFr
 
 
 export async function getSong(channelId: Snowflake, timeout = 30): Promise<PlaylistEntry | void> {
-  let response = await queue.dequeue(channelId, timeout);
+  let queueKey = `discord:channel:${channelId}:queue`
+  let response = await queue.dequeue(queueKey, timeout);
   if(!response) return;
 
   if(response.error) {
