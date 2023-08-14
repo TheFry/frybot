@@ -1,7 +1,7 @@
 import { setTimeout } from 'timers/promises';
 import { Redis } from 'ioredis';
 import { Client, GatewayIntentBits, Snowflake } from 'discord.js';
-import { DiscordClient } from '../helpers/common';
+import { DiscordClient, CHANNEL_EVENT_KEY, ChannelEvent } from '../helpers/common';
 import { newClient as newRedisClient } from '../helpers/redis';
 import { VoiceBot, voicebotList, connectedGuilds } from './VoiceBot';
 
@@ -21,6 +21,7 @@ client.once('ready', async () => {
 	console.log('Client logged in!');
 	let redisClient = await newRedisClient();
 	reserveChannels(redisClient);
+	watchChannelEvents(redisClient);
 });
 
 
@@ -88,11 +89,60 @@ async function reserveChannels(redisClient: Redis) {
 		bot.playNext()
 			.catch(err => { 
 				console.log(`Error running first playNext - ${err}`)
-				bot.cleanupAudio();
-				releaseChannel(channelId);
-				delete connectedGuilds[guildId as string];
-				delete voicebotList[channelId];
+				bot.resourceLock.acquire()
+					.then(() => {
+						bot.cleanupAudio();
+						bot.releaseChannel(true);
+						delete connectedGuilds[guildId as string];
+						delete voicebotList[channelId];
+						bot.resourceLock.release();
+					})
+					.catch(err => {
+						console.log(err);
+						bot.resourceLock.release();
+					})
 			})
-
 	} 
+}
+
+
+async function watchChannelEvents(redisClient: Redis) {
+	let subscriber = redisClient.duplicate();
+	subscriber.subscribe(CHANNEL_EVENT_KEY);
+
+	subscriber.on('message', async (channel, message) => {
+		let event: ChannelEvent;
+		try {
+			event = JSON.parse(message) as ChannelEvent;
+		} catch(err) {
+			console.log(`Channel event subscriber error - failed to parse message`);
+			return;
+		}
+
+		if(!event.eventName || !event.channelId) {
+			console.log(`Channel event subscriber error - Invalid event\n${JSON.stringify(event, null, 2)}`);
+			return;
+		}
+
+		if(!Object.keys(voicebotList).includes(event.channelId)) return;
+		let bot = voicebotList[event.channelId];
+
+		if(event.eventName === 'stop' && bot !== undefined) {
+			console.log(`Channel ${event.channelId} - user requested stop`);
+			await bot.resourceLock.acquire();
+			await bot.stop();
+			bot.resourceLock.release();
+		}
+
+		if(event.eventName === 'skip' && bot !== undefined) {
+			console.log(`Channel ${event.channelId} - user requested skip`);
+			await bot.resourceLock.acquire();
+			await bot.playNext(true);
+			bot.resourceLock.release();
+		}
+	})
+
+	subscriber.on('error', (err) => {
+		console.log(`Channel event subscriber error - ${err}`);
+	})
 }

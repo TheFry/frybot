@@ -17,6 +17,8 @@ import { client } from './main';
 import { download } from '../helpers/youtube';
 import { redisClient } from '../helpers/redis';
 import { getSong, addSong } from '../helpers/playlist';
+import { dequeue } from '../helpers/message_queue';
+import { Mutex } from 'async-mutex';
 
 const VOICE_VOLUME = 0.28
 
@@ -59,6 +61,7 @@ export class VoiceBot {
   channelName: string;
   audioResources: AudioResources;
   redis_queueKey: string;
+  resourceLock: Mutex;
 
 
   constructor(options: ConstructorOptions) {
@@ -69,6 +72,7 @@ export class VoiceBot {
     this.audioResources = options.audioResources;
     this.isConnected = options.isConnected || true;
     this.redis_queueKey = `discord:channels:${this.channelId}:queue`;
+    this.resourceLock = new Mutex();
   }
 
   
@@ -135,12 +139,14 @@ export class VoiceBot {
 
   async addPlayerHandlers() {
     this.audioResources.player.on('error', err => {
-      console.log(`Audio Player error channel ${this.channelId}\n${err}`);
+      console.log(`Audio Player error channel ${this.channelId}`);
+      console.log(err);
     })
 
     this.audioResources.player.on(AudioPlayerStatus.Idle, async (oldSate) => {
       switch(oldSate.status) {
         case AudioPlayerStatus.Playing:
+          await this.resourceLock.acquire();
           try {
             await this.playNext();
           } catch(err) {
@@ -148,6 +154,7 @@ export class VoiceBot {
             this.cleanupAudio();
             await this.releaseChannel(true);
           } 
+          await this.resourceLock.release();
           break;
         case AudioPlayerStatus.Buffering:
           console.log('Was buffering or something');
@@ -159,10 +166,14 @@ export class VoiceBot {
   // Called when player enters the idle state. After playing
   // If the queue isn't empty, play the next song.
   // Otherwise, clean up all resources associated with guild.
-  async playNext(): Promise<void> {
+  async playNext(skip = false): Promise<void> {
     let retries = 3;
 
-    let entry = await getSong(this.channelId, this.idleTimeout);
+    if(this.audioResources.player.state.status === AudioPlayerStatus.Playing && !skip) {
+      return;
+    }
+
+    let entry = await getSong(this.channelId, skip ? -1 : this.idleTimeout);
     if(!entry) {
       console.log(`Nothing in the queue for ${this.channelId}. Cleaning up`);
       await this.cleanupAudio();
@@ -200,9 +211,19 @@ export class VoiceBot {
   }
 
 
+  async stop(interactionId?: Snowflake) {
+    this.cleanupAudio();
+    await dequeue(`${this.redis_queueKey}`, -1);
+    await this.releaseChannel();
+    delete connectedGuilds[this.channelId];
+    delete voicebotList[this.channelId];
+  }
+
+
   // Helper function to clean up guild resources.
   cleanupAudio(): void {
     console.log(`Guild ${this.guildId} cleanup`);
+    this.audioResources.player.removeAllListeners(AudioPlayerStatus.Idle);
     this.audioResources.player.stop();
     if(this.audioResources.readStream) this.audioResources.readStream.close();
     delete this.audioResources.readStream;

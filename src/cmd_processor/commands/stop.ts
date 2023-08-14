@@ -1,13 +1,20 @@
 import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
+import { redisClient } from '../../helpers/redis';
+import { CHANNEL_EVENT_KEY, ChannelEvent } from '../../helpers/common';
 
-const DEBUG = process.env['DEBUG'] === "1" ? true : false;
+const DEBUG = process.env['DEBUG'] === "1" ? true : false
+
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  await interaction.reply('Not implemented yet');
-  // const member = interaction.member as GuildMember;
-  // const guild = guildList[member.guild.id]
-  // await interaction.reply({ content: "Stopping and clearing queue..." });
-  // if(guild) guild.cleanupAudio();
-  // await interaction.editReply(`Queue cleared`);
+  let member = interaction.member as GuildMember;
+  await interaction.reply(`Clearing the queue`);
+  if(!member.voice.channelId) {
+    interaction.editReply(`You need to be in a voice channel to run this command`);
+  }
+  await redisClient?.publish(CHANNEL_EVENT_KEY, JSON.stringify({
+    eventName: 'stop',
+    channelId: member.voice.channelId,
+    interactionId: interaction.id
+  } as ChannelEvent));
 }
 
 const command = new SlashCommandBuilder()

@@ -1,6 +1,14 @@
-import { Client } from 'discord.js';
+import { Client, Snowflake } from 'discord.js';
 
 export class DiscordClient extends Client { commands: any };
+
+export interface ChannelEvent {
+	eventName: string;
+	channelId: Snowflake;
+  interactionId: Snowflake;
+}
+
+export const CHANNEL_EVENT_KEY = 'discord:channel-events';
 
 function usage(missing: string): void {
   console.log(`

@@ -1,20 +1,20 @@
 import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
-
+import { redisClient } from '../../helpers/redis';
+import { ChannelEvent, CHANNEL_EVENT_KEY } from '../../helpers/common';
 
 const DEBUG = process.env['DEBUG'] === "1" ? true : false;
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  // const member = interaction.member as GuildMember;
-  // const guild = guildList[`${member.guild.id}`];
-  await interaction.reply('Not implemented yet');
-  // if(guild && guild.checkInitAudio() && guild.getQueue().length > 0) {
-  //   await interaction.reply({ content: `Skipping to => ${guild.getQueue()[0].songName}` });
-  //   await guild.playNext();
-  //   return;
-  // } else {
-  //   await interaction.reply({ content: `Queue is empty` });
-  //   if(guild) await guild.cleanupAudio();
-  //   return;
-  // }
+  await interaction.reply('Skipping Song');
+  const member = interaction.member as GuildMember;
+  if(!member.voice.channelId) {
+    interaction.editReply(`You need to be in a voice channel to run this command`);
+  }
+
+  await redisClient?.publish(CHANNEL_EVENT_KEY, JSON.stringify({
+    eventName: 'skip',
+    channelId: member.voice.channelId,
+    interactionId: interaction.id
+  } as ChannelEvent));
 }
 
 const command = new SlashCommandBuilder()
