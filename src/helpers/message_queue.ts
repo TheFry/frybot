@@ -66,7 +66,7 @@ export async function dequeue(queueKey: string, count: number, timeout?: number)
   while(count > 0) {
     let uuid: string | null = null;
     try {
-      if(timeout === undefined) {
+      if(timeout === undefined || timeout < 0) {
         uuid = await redisClient?.rpop(queueKey) as string | null;
       } else {
         let res = await redisClient?.duplicate().brpop(queueKey, timeout);
