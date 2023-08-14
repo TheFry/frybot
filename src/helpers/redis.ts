@@ -1,86 +1,44 @@
-import { createClient, defineScript } from "redis";
-import { EnqueueOptions, EnqueueResponseStatus } from "./message_queue";
-
+import Redis, { Result, Callback } from "ioredis";
+import { readFileSync } from "fs";
+import { Snowflake } from "discord.js";
 const REDIS_URL = process.env['REDIS_URL'] || 'redis://localhost:6379';
+const REDIS_SCRIPT_DIR = './redis_scripts';
+declare module "ioredis" {
+  interface RedisCommander<Context> {
+    enqueue(
+      queueKey: string,
+      entryKey: string,
+      uuid: string,
+      message: string,
+      inFront?: string,
+      callback?: Callback<string>
+    ): Result<[string | object, number | object], Context>;
 
-
-// Used to atomically check if a channel is being watched by a worker bot
-// If it isn't, add it 
-const checkIfWatched = defineScript({
-  NUMBER_OF_KEYS: 2,
-  SCRIPT: `
-    local isReserved = redis.call("SISMEMBER", KEYS[1], ARGV[1])
-    if isReserved == 0 then
-      redis.call("LPUSH", KEYS[2], ARGV[1])
-    end
-  `,
-  transformArguments(reserveChannels: string, freeChannels: string, channelId: string) { return [reserveChannels, freeChannels, channelId] }
-})
-
-
-// Used to atomically add messages to the message queue
-const enqueue = defineScript({
-  NUMBER_OF_KEYS: 2,
-  SCRIPT: `
-    local response = {}
-    response[1] = redis.pcall('JSON.SET', KEYS[2], '.', ARGV[2])
-    
-    if response[1]['err'] ~= nil then
-      redis.log(redis.LOG_WARNING, response[1]['err'])
-      redis.debug(redis.LOG_WARNING, response[1]['err'])
-      response[2] = 0
-      return response
-    end
-    
-    local cmd = "LPUSH"
-    if ARGV[3] == "true" then
-      cmd = "RPUSH"
-    end
-    
-    response[2] = redis.pcall(cmd, KEYS[1], ARGV[1])
-    if response[2] <= 0 then 
-      redis.log(redis.LOG_WARNING, response[2]['err'])
-      redis.debug(redis.LOG_WARNING, response[2]['err'])
-      redis.pcall('del', KEYS[2])
-    end
-    
-    return response
-  `,
-  
-  transformArguments(options: EnqueueOptions) { 
-    return [
-      options.queueKey, 
-      options.entryKey, 
-      options.uuid, 
-      JSON.stringify(options.message), 
-      options.inFront ? options.inFront.toString() : 'false' 
-    ] 
-  },
-
-  transformReply(reply: any): EnqueueResponseStatus { 
-    return { jsonSet: reply[0], listPush: reply[1].toString() } 
+    checkIfWatched(
+      redis_watchedKey: string,
+      redis_freeKey: string,
+      channelId: Snowflake,
+      callback?: Callback<string>
+    ): Result<string, Context>;
   }
-})
+}
 
+export let redisClient: Redis | null = null;
 
-// I created a client just for the type definition. It's really just wasted memory
-export let redisClient = createClient({ url: REDIS_URL, scripts: { enqueue: enqueue, checkIfWatched: checkIfWatched } });
+export async function newClient(url: string = REDIS_URL) {
+  let newClient = new Redis(url)
 
-
-export async function connect(url: string = REDIS_URL) {
-  redisClient = createClient({
-    url: url,
-    scripts: {
-      enqueue: enqueue,
-      checkIfWatched: checkIfWatched
-    }
+  newClient.defineCommand('enqueue', {
+    numberOfKeys: 2,
+    lua: readFileSync(`${REDIS_SCRIPT_DIR}/enqueue.lua`).toString()
   })
-  redisClient.on('error', err => console.log('Redis Client Error', err));
-  await redisClient.connect();
+
+  newClient.defineCommand('checkIfWatched', {
+    numberOfKeys: 2,
+    lua: readFileSync(`${REDIS_SCRIPT_DIR}/checkIfWatched.lua`).toString(),
+  })
+
+  newClient.on('error', err => console.log('Redis Client Error', err));
+  redisClient = newClient;
+  return newClient;
 }
-
-
-export async function disconnect() {
-  await redisClient.quit();
-}
-

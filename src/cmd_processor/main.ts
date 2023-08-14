@@ -2,7 +2,7 @@ import loadCommands from '../helpers/load-commands';
 import { Client, Collection, GatewayIntentBits, Interaction } from 'discord.js';
 import { checkVars, DiscordClient } from '../helpers/common';
 import { addInteraction } from '../helpers/interactions';
-import * as redis from '../helpers/redis';
+import { newClient as newRedisClient } from '../helpers/redis';
 
 checkVars();
 const DC_TOKEN = process.env['DC_TOKEN'] || '';
@@ -12,8 +12,7 @@ const G_ID = process.env['G_ID'] || '';
 const client: DiscordClient = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] }) as DiscordClient;
 
 
-redis.connect()
-  .then(() => { client.login(DC_TOKEN) })
+client.login(DC_TOKEN)
   .catch((err) => { 
     console.log(err);
     process.exit(1);
@@ -22,6 +21,7 @@ redis.connect()
 
 client.once('ready', async () => {
   console.log('Client logged in!');
+  await newRedisClient();
   client.commands = new Collection();
   loadCommands(client, DC_TOKEN, DC_CLIENT, '../cmd_processor/commands', G_ID);
 });

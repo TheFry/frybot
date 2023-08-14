@@ -128,8 +128,8 @@ export class VoiceBot {
   async releaseChannel(markFree = false) {
     const redis_watchedKey = 'frybot:reserved-channels';
     const redis_freeKey = 'frybot:free-channels';
-    await redisClient.sRem(redis_watchedKey, this.channelId)
-    if(markFree) await redisClient.rPush(redis_freeKey, this.channelId)
+    await redisClient?.srem(redis_watchedKey, this.channelId)
+    if(markFree) await redisClient?.rpush(redis_freeKey, this.channelId)
   }
 
 
@@ -164,6 +164,7 @@ export class VoiceBot {
 
     let entry = await getSong(this.channelId, this.idleTimeout);
     if(!entry) {
+      console.log(`Nothing in the queue for ${this.channelId}. Cleaning up`);
       await this.cleanupAudio();
       await this.releaseChannel();
       delete voicebotList[this.channelId];
@@ -195,7 +196,7 @@ export class VoiceBot {
       throw err;
     }
 
-    console.log(`Guild ${this.guildId} - playing ${entry.youtubeVideoTitle}`);
+    console.log(`Channel ${this.channelId} - playing ${entry.youtubeVideoTitle}`);
   }
 
 

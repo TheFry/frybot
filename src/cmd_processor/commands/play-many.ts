@@ -77,8 +77,8 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
 
     // Throw the guildId in redis with the channel id as a key
   // Voicebots use this rather than querying discord for it
-  await redisClient.set(`discord:channel:${channelId}:guild-id`, member.guild.id, { NX: true });
-  await redisClient.checkIfWatched(redis_watchedKey, redis_freeKey, channelId);
+  await redisClient?.setnx(`discord:channel:${channelId}:guild-id`, member.guild.id);
+  await redisClient?.checkIfWatched(redis_watchedKey, redis_freeKey, channelId);
 
   let videos = await yt.list(ids, YT_TOKEN);
   // for(let video of Object.values(videos)) {

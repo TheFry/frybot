@@ -5,15 +5,15 @@ export interface Message { [key: string]: any }
 
 export interface EnqueueResponseStatus {
   jsonSet: string | object;
-  listPush: number;
+  listPush: number | object;
 }
 
 export interface EnqueueResponse {
-  status: EnqueueResponseStatus | null;
+  status?: EnqueueResponseStatus;
+  entryKey: string;
   message: Message;
   error?: unknown;
 }
-
 
 export interface DequeueResponse {
   uuid?: string;
@@ -35,14 +35,18 @@ export async function enqueue(queueKey: string, messages: Message[], inFront = f
   for(let message of messages) {
     let uuid = nanoid();
     let entryKey = `${queueKey}-entry:${uuid}`;
-    let status: EnqueueResponseStatus;
+    let status;
     try {
-      status = await redisClient.enqueue({ queueKey, entryKey, uuid, message, inFront });
+      status = await redisClient?.enqueue(queueKey, entryKey, uuid, JSON.stringify(message), inFront.toString());
     } catch(err) {
-      responses.push({ status: null, message: message, error: err });
+      responses.push({ entryKey, message, error: err });
       continue;
     }
-    responses.push({ status, message });
+    if(!status) {
+      responses.push({ entryKey, message, error: new Error(`Enqueue Error - no response from server for ${entryKey}`) })
+    } else {
+      responses.push({ entryKey,  message, status: { jsonSet: status[0], listPush: status[1] } });
+    }
   }
   return responses;
 }
@@ -52,10 +56,10 @@ export async function dequeue(queueKey: string, timeout?: number): Promise<Deque
   let uuid: string | null = null;
   try {
     if(timeout === undefined) {
-      uuid = await redisClient.rPop(queueKey);
+      uuid = await redisClient?.rpop(queueKey) as string | null;
     } else {
-      let res = await redisClient.executeIsolated(isolatedClient => isolatedClient.brPop(queueKey, timeout));
-      if(res) uuid = res.element;
+      let res = await redisClient?.duplicate().brpop(queueKey, timeout);
+      if(res) uuid = res[1];
     }
   } catch(err) {
     return { error: err };
@@ -66,10 +70,10 @@ export async function dequeue(queueKey: string, timeout?: number): Promise<Deque
   let entryKey = `${queueKey}-entry:${uuid}`;
   let res = []; 
   try {
-    res = await redisClient.multi()
-      .json.get(entryKey, { path: [ '.' ] })
+    res = await redisClient?.multi()
+      .call('JSON.GET', entryKey)
       .del(entryKey)
-      .exec()
+      .exec() as any
   } catch(err) {
     return {
       uuid: uuid,
@@ -79,7 +83,7 @@ export async function dequeue(queueKey: string, timeout?: number): Promise<Deque
 
   return {
     uuid: uuid,
-    message: res[0] as Message,
+    message: JSON.parse(res[0][1]) as Message,
     error: res[1] as number <= 0 ? new Error(`Error deleting key ${entryKey}. It doesn't exist.`) : undefined
   }
 }
