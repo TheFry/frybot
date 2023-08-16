@@ -112,31 +112,35 @@ job "frybot-v2" {
       }
     }
 
-    // task "voicebot3" {
-    //   driver = "docker"
+    task "voicebot3" {
+      driver = "docker"
 
-    //   config {
-    //     image = "docker-reg.service.consul:5000/frybot:dev"
-    //     args = [ "built/voice_bot/main.js" ]
-    //   }
+      config {
+        image = "docker-reg.service.consul:5000/frybot:dev"
+        args = [ "built/voice_bot/main.js" ]
+      }
 
-    //   resources {
-    //     cpu = "500"
-    //     memory = "512"
-    //   }
+      env {
+        REDIS_URL = "redis://redis.service.consul:6379"
+      }
 
-    //   vault {
-    //     policies = ["default", "sassy-bot"]
-    //   }
+      resources {
+        cpu = "500"
+        memory = "512"
+      }
 
-    //   template {
-    //     data = <<EOF
-    //     DC_TOKEN={{with secret "secret/data/discord/voicebot3"}}{{.Data.data.DC_TOKEN}}{{end}}
-    //     YT_TOKEN={{with secret "secret/data/discord/voicebot3"}}{{.Data.data.YT_TOKEN}}{{end}}
-    //     EOF
-    //     env = true
-    //     destination = "secrets/env"
-    //   }
-    // }
+      vault {
+        policies = ["default", "sassy-bot"]
+      }
+
+      template {
+        data = <<EOF
+        DC_TOKEN={{with secret "secret/data/discord/voicebot3"}}{{.Data.data.DC_TOKEN}}{{end}}
+        YT_TOKEN={{with secret "secret/data/discord/voicebot3"}}{{.Data.data.YT_TOKEN}}{{end}}
+        EOF
+        env = true
+        destination = "secrets/env"
+      }
+    }
   }
 }                                                                                                                                                                                                                                
