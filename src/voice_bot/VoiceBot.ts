@@ -20,7 +20,7 @@ import { getSong, addSong } from '../helpers/playlist';
 import { dequeue } from '../helpers/message_queue';
 import { Mutex } from 'async-mutex';
 
-const VOICE_VOLUME = 0.28
+const VOICE_VOLUME = 0.15
 
 
 interface AudioResources {
