@@ -72,7 +72,7 @@ async function reserveChannels(redisClient: Redis) {
 			voicebotList[channelId] = await VoiceBot.init({ 
 				channelId,
 				guildId,
-				idleTimeout: 30,
+				idleTimeout: 600,
 				voiceAdapter: (await client.guilds.fetch(guildId)).voiceAdapterCreator
 			 })
 		} catch(err) {
