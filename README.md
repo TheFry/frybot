@@ -34,7 +34,7 @@ The interaction processor handles all user interaction. It waits for ChatInputCo
 
 Voice bots watch redis for discord channels that have an active queue but no voice bot playing music. This type of channel will be referred to as an ***open channel***. Bots use redis to coordinate the reservation of open channels amongst themselves. A channel that has an active voice connection is called a ***reserved channel***. Only one bot connects to a channel at a time.
 
-Each bot can reserve multiple channels (as long as they're in separate guilds - See below), and will watch those channels for queued music. If there is a song in the queue, the bot will download the required audio data and stream it to discord. This is currently done using youtube, but the aim is to make this modular enough to switch youtube out with whatever media provider a user wants. Bots will clean up audio resources if a queue has been empty for a configurable amount of time.
+Each bot can reserve multiple channels (as long as they're in separate guilds - [See here](#why-would-you-need-multiple-bots)), and will watch those channels for queued music. If there is a song in the queue, the bot will download the required audio data and stream it to discord. This is currently done using youtube, but the aim is to make this modular enough to switch youtube out with whatever media provider a user wants. Bots will clean up audio resources if a queue has been empty for a configurable amount of time.
 
 Voice bots are subscribed to stop and skip command events, so redis will trigger a function in the voice bot to handle this when the command is sent to the interaction processor. 
 
