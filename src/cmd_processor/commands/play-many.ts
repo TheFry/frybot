@@ -2,11 +2,12 @@ import { ActionRowBuilder, ButtonInteraction, ChatInputCommandInteraction, Guild
 import { randomBytes } from "crypto";
 import * as yt from '../../helpers/youtube';
 import { redisClient } from "../../helpers/redis";
+import { PlaylistEntry, addSong } from "../../helpers/playlist";
 
 const DEBUG = process.env["DEBUG"] === "1" ? true : false;
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
 
-async function getModalData(interaction: ChatInputCommandInteraction): Promise<string> {
+async function getModalData(interaction: ChatInputCommandInteraction): Promise<[string, ModalMessageModalSubmitInteraction | null]> {
   const modalId = await randomBytes(16).toString('hex');
   const linksId = await randomBytes(16).toString('hex');
 
@@ -31,7 +32,7 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<s
     submission = await interaction.awaitModalSubmit({ time: 600_000, filter: modalFilter }) as ModalMessageModalSubmitInteraction;
   } catch(err) {
     console.log(err);
-    return '';
+    return ['', null];
   }
   
   await submission.reply('Verifying Links...');
@@ -57,7 +58,7 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<s
   }
 
   await submission.editReply(reply);
-  return links.map(link => new URL(link).searchParams.get('v')).join(',');
+  return [links.map(link => new URL(link).searchParams.get('v')).join(','), submission];
 }
 
 
@@ -73,17 +74,22 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   }
 
   let ids = (await getModalData(interaction));
-  if(ids === '') return;
+  if(ids[0] === '') return;
 
-    // Throw the guildId in redis with the channel id as a key
+  // Throw the guildId in redis with the channel id as a key
   // Voicebots use this rather than querying discord for it
   await redisClient?.setnx(`discord:channel:${channelId}:guild-id`, member.guild.id);
   await redisClient?.checkIfWatched(redis_watchedKey, redis_freeKey, channelId);
 
-  let videos = await yt.list(ids, YT_TOKEN);
-  // for(let video of Object.values(videos)) {
-  //   await guild?.addSong(video.name, video.id);
-  // }
+  try {
+    let videos: PlaylistEntry[] = (await yt.list(ids[0], YT_TOKEN)).map(vid => ({ youtubeVideoId: vid.id, youtubeVideoTitle: vid.name, interactionId: interaction.id }));
+    await addSong(channelId, videos);
+  } catch(err) {
+    console.log(`play-many error channel ${channelId} - ${err}`);
+    if(ids[1]) {
+      ids[1].editReply('Error adding songs');
+    }
+  }
 }
 
 const command = new SlashCommandBuilder()
