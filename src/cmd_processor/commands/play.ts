@@ -1,4 +1,11 @@
-import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ChatInputCommandInteraction, GuildMember } from 'discord.js';
+import { SlashCommandBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ComponentType,
+  ChatInputCommandInteraction,
+  GuildMember } from 'discord.js';
+  
 import * as yt from '../../helpers/youtube';
 import { redisClient } from '../../helpers/redis';
 import { addSong, PlaylistEntry } from '../../helpers/playlist';

@@ -1,4 +1,13 @@
-import { ActionRowBuilder, ChatInputCommandInteraction, GuildMember, ModalBuilder, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
+import { ActionRowBuilder, 
+  ChatInputCommandInteraction,
+  GuildMember,
+  ModalBuilder,
+  ModalMessageModalSubmitInteraction,
+  ModalSubmitInteraction,
+  SlashCommandBuilder,
+  TextInputBuilder,
+  TextInputStyle } from "discord.js";
+  
 import { randomBytes } from "crypto";
 import * as yt from '../../helpers/youtube';
 import { redisClient } from "../../helpers/redis";

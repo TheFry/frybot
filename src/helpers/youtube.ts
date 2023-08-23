@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
 import ytdl from '@distube/ytdl-core';
 import fs, { ReadStream } from 'fs';
 

@@ -1,8 +1,10 @@
 import Redis, { Result, Callback } from "ioredis";
 import { readFileSync } from "fs";
 import { Snowflake } from "discord.js";
+
 const REDIS_URL = process.env['REDIS_URL'] || 'redis://localhost:6379';
 const REDIS_SCRIPT_DIR = './redis_scripts';
+
 declare module "ioredis" {
   interface RedisCommander<Context> {
     enqueue(

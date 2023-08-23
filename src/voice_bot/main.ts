@@ -53,7 +53,6 @@ async function reserveChannels(redisClient: Redis) {
 			continue;
 		}
 
-
 		let guildId = await redisClient.get(`discord:channel:${channelId}:guild-id`);
 		if(!guildId || watched_guilds[guildId]) {
 			let errText = `Can't watch ${channelId} - ${ !guildId 
