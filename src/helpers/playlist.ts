@@ -1,6 +1,7 @@
 import { Snowflake } from 'discord.js';
 import * as queue from './message_queue';
 import { DiscordResponse } from './interactions';
+import { redisClient } from './redis';
 
 export interface PlaylistEntry {
   youtubeVideoId: string;
@@ -35,4 +36,16 @@ export async function getSong(channelId: Snowflake, timeout = 30): Promise<Playl
   }
 
   if(response[0].message) return response[0].message as PlaylistEntry;
+}
+
+
+export async function getBotId(channelId: Snowflake) {
+  let botIdKey = `discord:channel:${channelId}:bot-id`;
+
+  try {
+    return await redisClient?.get(botIdKey);
+  } catch(err) {
+    console.log(`Error getting bot id - ${err}`);
+    return null;
+  }
 }
