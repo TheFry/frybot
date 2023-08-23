@@ -4,6 +4,7 @@ import { Client, GatewayIntentBits, Snowflake } from 'discord.js';
 import { DiscordClient, CHANNEL_EVENT_KEY, ChannelEvent, WATCHED_CHANNELS_KEY, FREE_CHANNELS_KEY } from '../helpers/common';
 import { newClient as newRedisClient } from '../helpers/redis';
 import { VoiceBot, voicebotList, connectedGuilds } from './VoiceBot';
+import { getBotId } from '../helpers/playlist';
 
 const DC_TOKEN = process.env['DC_TOKEN'] || '';
 export const client: DiscordClient = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] }) as DiscordClient;
@@ -27,6 +28,7 @@ client.once('ready', async () => {
 
 // Watch redis for open queues. Try to reserve one
 async function reserveChannels(redisClient: Redis) {
+	console.log(`Looking for open channels...`);
 	const coolDown = 5000; // How long to wait before looking for a new queue after failure
 	let watched_guilds: any = {};
 
@@ -37,7 +39,65 @@ async function reserveChannels(redisClient: Redis) {
 			.exec()
 	}
 
-	console.log(`Looking for open channels...`);
+	const initChannel = async(channelId: Snowflake) => {
+		let guildId = await redisClient.get(`discord:channel:${channelId}:guild-id`);
+		if(!guildId || watched_guilds[guildId]) {
+			let errText = `Can't watch ${channelId} - ${ !guildId 
+				? 'There was no guildId found in redis. The cmd processor probably fucked up'
+				: `Already connected to ${guildId}`
+			}`
+			console.log(errText);
+			await releaseChannel(channelId);
+			await setTimeout(coolDown);
+			return 1;
+		}
+
+		try {
+			voicebotList[channelId] = await VoiceBot.init({ 
+				channelId,
+				guildId,
+				idleTimeout: 600,
+				voiceAdapter: (await client.guilds.fetch(guildId)).voiceAdapterCreator
+			 })
+		} catch(err) {
+			console.log(`Error creating VoiceBot - ${err}`);
+			await releaseChannel(channelId);
+			return 1;
+		}	
+
+		connectedGuilds[guildId] = true;
+		let bot = voicebotList[channelId] as VoiceBot;
+		try {
+			await bot.playNext();
+		} catch(err) {
+			console.log(`Error running first playNext - ${err}`);
+			await bot.resourceLock.acquire();
+			bot.cleanupAudio();
+			bot.releaseChannel(true);
+			delete connectedGuilds[guildId as string];
+			delete voicebotList[channelId];
+			bot.resourceLock.release();
+			return 1;
+		}
+		
+		console.log(`Success! Watching channel ${channelId}`);
+		await redisClient.setnx(`discord:channel:${channelId}:bot-id`, client.application?.id as string)
+		return 0;
+	}
+
+	// Init channels already in redis we're assigned to
+	let watched = await redisClient.smembers(WATCHED_CHANNELS_KEY);
+	for(let channel of watched) {
+		let id = await getBotId(channel);
+		if(id && id === client.application?.id) {
+			try {
+				await initChannel(channel);
+			} catch(err) {
+				console.log(`Init channel error - ${err}`);
+			}
+		}
+	}
+
 	while(watchQueues) {
     const response = await redisClient.duplicate().brpop(FREE_CHANNELS_KEY, 0);
 		if(!response) continue;  // Make typescript happy. This should always return something
@@ -53,52 +113,11 @@ async function reserveChannels(redisClient: Redis) {
 			continue;
 		}
 
-		let guildId = await redisClient.get(`discord:channel:${channelId}:guild-id`);
-		if(!guildId || watched_guilds[guildId]) {
-			let errText = `Can't watch ${channelId} - ${ !guildId 
-				? 'There was no guildId found in redis. The cmd processor probably fucked up'
-				: `Already connected to ${guildId}`
-			}`
-			console.log(errText);
-			await releaseChannel(channelId);
-			await setTimeout(coolDown);
-			continue;
-		}
-
 		try {
-			voicebotList[channelId] = await VoiceBot.init({ 
-				channelId,
-				guildId,
-				idleTimeout: 600,
-				voiceAdapter: (await client.guilds.fetch(guildId)).voiceAdapterCreator
-			 })
+			await initChannel(channelId);
 		} catch(err) {
-			console.log(`Error creating VoiceBot - ${err}`);
-			await releaseChannel(channelId);
-			await setTimeout(coolDown);
-			continue;
+			console.log(`Init channel error - ${err}`);
 		}
-
-		console.log(`Success! Watching channel ${channelId}`);
-
-		connectedGuilds[guildId] = true;
-		let bot = voicebotList[channelId] as VoiceBot;
-		bot.playNext()
-			.catch(err => { 
-				console.log(`Error running first playNext - ${err}`)
-				bot.resourceLock.acquire()
-					.then(() => {
-						bot.cleanupAudio();
-						bot.releaseChannel(true);
-						delete connectedGuilds[guildId as string];
-						delete voicebotList[channelId];
-						bot.resourceLock.release();
-					})
-					.catch(err => {
-						console.log(err);
-						bot.resourceLock.release();
-					})
-			})
 	} 
 }
 
