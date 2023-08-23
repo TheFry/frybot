@@ -16,6 +16,8 @@ export interface ClipJob {
   interactionId: Snowflake;
 }
 
+export const FREE_CHANNELS_KEY = 'frybot:free-channels';
+export const WATCHED_CHANNELS_KEY = 'frybot:reserved-channels';
 export const CHANNEL_EVENT_KEY = 'discord:channel-events';
 export const CLIP_QUEUE_KEY =  'frybot:clip-jobs-queue';
 export const INTERACTION_QUEUE_KEY = 'frybot:interaction-queue';

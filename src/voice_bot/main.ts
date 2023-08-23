@@ -1,7 +1,7 @@
 import { setTimeout } from 'timers/promises';
 import { Redis } from 'ioredis';
 import { Client, GatewayIntentBits, Snowflake } from 'discord.js';
-import { DiscordClient, CHANNEL_EVENT_KEY, ChannelEvent } from '../helpers/common';
+import { DiscordClient, CHANNEL_EVENT_KEY, ChannelEvent, WATCHED_CHANNELS_KEY, FREE_CHANNELS_KEY } from '../helpers/common';
 import { newClient as newRedisClient } from '../helpers/redis';
 import { VoiceBot, voicebotList, connectedGuilds } from './VoiceBot';
 
@@ -27,24 +27,22 @@ client.once('ready', async () => {
 
 // Watch redis for open queues. Try to reserve one
 async function reserveChannels(redisClient: Redis) {
-	const redis_watchedKey = 'frybot:reserved-channels';
-  const redis_freeKey = 'frybot:free-channels';
 	const coolDown = 5000; // How long to wait before looking for a new queue after failure
 	let watched_guilds: any = {};
 
 	const releaseChannel = async(channelId: Snowflake) => {
 		await redisClient.multi()
-			.srem(redis_watchedKey, channelId)
-			.rpush(redis_freeKey, channelId)
+			.srem(WATCHED_CHANNELS_KEY, channelId)
+			.rpush(FREE_CHANNELS_KEY, channelId)
 			.exec()
 	}
 
 	console.log(`Looking for open channels...`);
 	while(watchQueues) {
-    const response = await redisClient.duplicate().brpop(redis_freeKey, 0);
+    const response = await redisClient.duplicate().brpop(FREE_CHANNELS_KEY, 0);
 		if(!response) continue;  // Make typescript happy. This should always return something
 		const channelId = response[1];
-		const wasAdded = await redisClient.sadd(redis_watchedKey, channelId);
+		const wasAdded = await redisClient.sadd(WATCHED_CHANNELS_KEY, channelId);
 
 		// Handle race condition where free-channels contains 2 entries for channelId
 		// Another bot may simultaneously try to add channelId to the watched-queues set. 

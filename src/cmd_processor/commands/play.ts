@@ -2,6 +2,7 @@ import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Comp
 import * as yt from '../../helpers/youtube';
 import { redisClient } from '../../helpers/redis';
 import { addSong, PlaylistEntry } from '../../helpers/playlist';
+import { FREE_CHANNELS_KEY, WATCHED_CHANNELS_KEY } from '../../helpers/common';
 
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
 const MAX_BTN_TEXT = 80;
@@ -45,8 +46,6 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   const q = interaction.options.getString('query');
   const member = interaction.member as GuildMember;
   const channelId = member.voice.channelId;
-  const redis_watchedKey = 'frybot:reserved-channels';
-  const redis_freeKey = 'frybot:free-channels';
   await interaction.reply({ content: `Searcing youtube for ${q}` });
   
   if(!channelId) {
@@ -62,7 +61,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   await redisClient?.setnx(`discord:channel:${channelId}:guild-id`, member.guild.id);
 
   // Add channel to free-channels if it isn't already in watched-channels
-  await redisClient?.checkIfWatched(redis_watchedKey, redis_freeKey, channelId);
+  await redisClient?.checkIfWatched(WATCHED_CHANNELS_KEY, FREE_CHANNELS_KEY, channelId);
 
   const entry: PlaylistEntry = {
     youtubeVideoId: songId,

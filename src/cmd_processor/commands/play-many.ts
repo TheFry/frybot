@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import * as yt from '../../helpers/youtube';
 import { redisClient } from "../../helpers/redis";
 import { PlaylistEntry, addSong } from "../../helpers/playlist";
+import { FREE_CHANNELS_KEY, WATCHED_CHANNELS_KEY } from "../../helpers/common";
 
 const DEBUG = process.env["DEBUG"] === "1" ? true : false;
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
@@ -65,8 +66,6 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<[
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const member = interaction.member as GuildMember;
   const channelId = member.voice.channelId;
-  const redis_watchedKey = 'frybot:watched-channels';
-  const redis_freeKey = 'frybot:free-channels';
   
   if(!channelId) {
     await interaction.editReply('You must be in a voice channel to play music!');
@@ -79,7 +78,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   // Throw the guildId in redis with the channel id as a key
   // Voicebots use this rather than querying discord for it
   await redisClient?.setnx(`discord:channel:${channelId}:guild-id`, member.guild.id);
-  await redisClient?.checkIfWatched(redis_watchedKey, redis_freeKey, channelId);
+  await redisClient?.checkIfWatched(WATCHED_CHANNELS_KEY, FREE_CHANNELS_KEY, channelId);
   let videos = (await yt.list(ids[0], YT_TOKEN)).map(vid => ({ youtubeVideoId: vid.id, youtubeVideoTitle: vid.name, interactionId: interaction.id }));
   
   try {
