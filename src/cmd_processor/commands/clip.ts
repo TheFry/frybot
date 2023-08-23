@@ -1,5 +1,3 @@
-const ffmpeg = require('fluent-ffmpeg');
-import { rmSync } from 'fs';
 import { SlashCommandBuilder, 
   ActionRowBuilder, 
   ButtonBuilder, 
@@ -29,29 +27,6 @@ interface ModalData {
   duration: Number;
   interaction: ModalMessageModalSubmitInteraction;
 }
-
-async function trimVideo(modalData: ModalData, outputFilePath: string, interaction: ChatInputCommandInteraction) {
-  let ytStream = await yt.download(modalData.link);
-  await ffmpeg(ytStream)
-    .setStartTime(modalData.startTime.str)
-    .setDuration(modalData.duration)
-    .output(outputFilePath)
-    .on('end', async () => {
-      console.log('Trimming and limiting size complete');
-      try {
-        await interaction.editReply({ content: `Here's your file`, files: [outputFilePath] });
-      } catch(err) {
-        console.log(err);
-        await interaction.editReply({ content: 'Error: Video size too large' });
-      }
-      rmSync(outputFilePath);
-    })
-    .on('error', (err : Error) => {
-      console.error('Error trimming and limiting size of MP3:', err);
-    })
-    .run();
-}
-
 
 async function getModalData(interaction: ButtonInteraction, videoData: yt.YTSearchResult): Promise<ModalData | null> {
   const startTimeId = 'startTime';
@@ -140,8 +115,6 @@ async function getSelection(interaction: ChatInputCommandInteraction, query: str
       .setStyle(ButtonStyle.Danger)
   ));
   
-
-
   let button: ButtonInteraction | null = null;
   let selectedVideo: yt.YTSearchResult | null = null;
   let message = await interaction.editReply({ content: `https://www.youtube.com/watch?v=${searchData[0].id}`, components: rows });
