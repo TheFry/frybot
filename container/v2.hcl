@@ -25,7 +25,7 @@ job "frybot-v2" {
 
       env {
         DEPLOY = 1
-        DEBUG = 1
+        // DEBUG = 1
         REDIS_URL = "redis://redis.service.consul:6379"
       }
 
@@ -40,13 +40,19 @@ job "frybot-v2" {
 
       template {
         data = <<EOF
-        DC_TOKEN={{with secret "secret/data/discord/frybot"}}{{.Data.data.DEV_DC_TOKEN}}{{end}}
-        DC_CLIENT={{with secret "secret/data/discord/frybot"}}{{.Data.data.DEV_DC_CLIENT}}{{end}}
+        DC_TOKEN={{with secret "secret/data/discord/frybot"}}{{.Data.data.DC_TOKEN}}{{end}}
+        DC_CLIENT={{with secret "secret/data/discord/frybot"}}{{.Data.data.DC_CLIENT}}{{end}}
         YT_TOKEN={{with secret "secret/data/discord/frybot"}}{{.Data.data.YT_TOKEN}}{{end}}
         G_ID={{with secret "secret/data/discord/frybot"}}{{.Data.data.G_ID}}{{end}}
         EOF
         env = true
         destination = "secrets/env"
+      }
+      
+      volume_mount {
+        volume      = "frybot_media"
+        destination = "/frybot_media"
+        read_only   = false
       }
     }
 
@@ -142,5 +148,36 @@ job "frybot-v2" {
         destination = "secrets/env"
       }
     }
+
+    task "ffmpeg" {
+      driver = "docker"
+
+      config {
+        image = "docker-reg.service.consul:5000/frybot:dev"
+        args = [ "built/ffmpeg/main.js" ]
+      }
+
+      env {
+        REDIS_URL = "redis://redis.service.consul:6379"
+      }
+
+      resources {
+        cpu = "500"
+        memory = "512"
+      }
+
+      volume_mount {
+        volume      = "frybot_media"
+        destination = "/frybot_media"
+        read_only   = false
+      }
+    }
+
+    volume "frybot_media" {
+      type = "host"
+      read_only = "false"
+      source = "frybot_media"
+    }
   }
+
 }                                                                                                                                                                                                                                
