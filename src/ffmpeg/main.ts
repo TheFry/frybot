@@ -14,6 +14,7 @@ async function clip(job: ClipJob) {
   let outputPath = `${MEDIA_DIR}/${nanoid()}.mp3`;
   let ytStream = await yt.download(link, rawPath);
 
+  console.log(`Processing ${job}`)
   ffmpeg(ytStream)
     .setStartTime(job.startTime)
     .setDuration(job.duration)
