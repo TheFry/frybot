@@ -1,8 +1,8 @@
-import { ActionRowBuilder, ButtonInteraction, ChatInputCommandInteraction, GuildMember, ModalBuilder, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
+import { ActionRowBuilder, ChatInputCommandInteraction, GuildMember, ModalBuilder, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
 import { randomBytes } from "crypto";
 import * as yt from '../../helpers/youtube';
 import { redisClient } from "../../helpers/redis";
-import { PlaylistEntry, addSong } from "../../helpers/playlist";
+import { addSong } from "../../helpers/playlist";
 import { FREE_CHANNELS_KEY, WATCHED_CHANNELS_KEY } from "../../helpers/common";
 
 const DEBUG = process.env["DEBUG"] === "1" ? true : false;
