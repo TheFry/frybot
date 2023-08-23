@@ -21,7 +21,7 @@ async function clip(job: ClipJob) {
     .on('end', async () => {
       console.log('Trimming and limiting size complete');
       let message: DiscordResponse = {
-        content: 'File trimming done',
+        content: 'Here is your file',
         files: [outputPath],
         interactionId: job.interactionId,
       }
