@@ -26,7 +26,7 @@ async function clip(job: ClipJob) {
         files: [outputPath],
         interactionId: job.interactionId,
       }
-      await enqueue(INTERACTION_QUEUE_KEY, [message])
+      await enqueue(INTERACTION_QUEUE_KEY, [message]);
       rmSync(rawPath);
     })
     .on('error', async (err : Error) => {
@@ -36,8 +36,10 @@ async function clip(job: ClipJob) {
         interactionId: job.interactionId,
       }
       await enqueue(INTERACTION_QUEUE_KEY, [message]);
-      rmSync(outputPath);
-      rmSync(rawPath);
+      try {
+        rmSync(outputPath);
+        rmSync(rawPath);
+      } catch { }
     })
     .run();
 }
@@ -58,8 +60,12 @@ async function main() {
       continue;
     }
 
-    let message = res.message as ClipJob;
-    await clip(message);
+    try {
+      let message = res.message as ClipJob;
+      await clip(message);
+    } catch(err) {
+      console.log(`Error clipping message - ${err}`);
+    }
   }
 }
 
