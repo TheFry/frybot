@@ -1,4 +1,5 @@
 import { Client, Snowflake } from 'discord.js';
+import { YTSearchResult } from './youtube';
 
 export class DiscordClient extends Client { commands: any };
 
@@ -8,7 +9,17 @@ export interface ChannelEvent {
   interactionId: Snowflake;
 }
 
+export interface ClipJob {
+  video: YTSearchResult;
+  startTime: string;
+  duration: Number;
+  interactionId: Snowflake;
+}
+
 export const CHANNEL_EVENT_KEY = 'discord:channel-events';
+export const CLIP_QUEUE_KEY =  'frybot:clip-jobs-queue';
+export const INTERACTION_QUEUE_KEY = 'frybot:interaction-queue';
+export const MEDIA_DIR = '/frybot_media';
 
 function usage(missing: string): void {
   console.log(`

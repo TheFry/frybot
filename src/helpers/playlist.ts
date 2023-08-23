@@ -17,7 +17,7 @@ export async function addSong(channelId: Snowflake, songs: PlaylistEntry[], inFr
     let status = response.status;
     let entry = response.message as PlaylistEntry;
     if(!status || status.jsonSet !== 'OK' || isNaN(status.listPush as number) || status.listPush as number <= 0) {
-      discordResponses.push({ interactionId: entry.interactionId, message: `Error adding ${entry.youtubeVideoTitle} to queue.` });
+      discordResponses.push({ interactionId: entry.interactionId, content: `Error adding ${entry.youtubeVideoTitle} to queue.` });
     }
   }
   return discordResponses;

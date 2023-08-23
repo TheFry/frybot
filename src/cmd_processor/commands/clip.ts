@@ -14,7 +14,9 @@ import { SlashCommandBuilder,
   ModalMessageModalSubmitInteraction } from 'discord.js';
 
 import * as yt from '../../helpers/youtube';
-import { timeConverter, TimeConverterReturn } from '../../helpers/common';
+import { enqueue } from '../../helpers/message_queue';
+import { addInteraction } from '../../helpers/interactions';
+import { CLIP_QUEUE_KEY, ClipJob, timeConverter, TimeConverterReturn } from '../../helpers/common';
 import { randomBytes } from 'crypto';
 
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
@@ -25,6 +27,7 @@ interface ModalData {
   link: string;
   startTime: TimeConverterReturn;
   duration: Number;
+  interaction: ModalMessageModalSubmitInteraction;
 }
 
 async function trimVideo(modalData: ModalData, outputFilePath: string, interaction: ChatInputCommandInteraction) {
@@ -96,6 +99,7 @@ async function getModalData(interaction: ButtonInteraction, videoData: yt.YTSear
   await interaction.showModal(modal);
   try {
     submission = await interaction.awaitModalSubmit({ time: 600_000, filter: modalFilter }) as ModalMessageModalSubmitInteraction;
+    addInteraction(submission);
   } catch(err) {
     interaction.editReply({ content: 'Timeout waiting for input', components: [] });
     return null;
@@ -107,7 +111,7 @@ async function getModalData(interaction: ButtonInteraction, videoData: yt.YTSear
   let link = submission.fields.getTextInputValue(urlId);
   
   if(isNaN(duration) || duration <= 0) return null;
-  return { link, startTime, duration }
+  return { link, startTime, duration, interaction: submission };
 }
 
 
@@ -218,7 +222,20 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   await interaction.editReply({ content: `Editing ${selection?.name}`, components: [] })
   modalData = await getModalData(modalInteraction, selection);
   if(!modalData) return;
-  await trimVideo(modalData, `${await randomBytes(16).toString('hex')}.mp3`, interaction);
+  let job: ClipJob = {
+    video: selection,
+    startTime: modalData.startTime.str,
+    duration: modalData.duration,
+    interactionId: modalData.interaction.id
+  }
+  
+  let res = (await enqueue(CLIP_QUEUE_KEY, [job]))[0]
+  if(res) {
+    if(res.error || res.status?.jsonSet !== 'OK') {
+      console.log(`Error adding clip job - ${JSON.stringify(res)}}`);
+      await modalData.interaction.editReply(`Failed adding clip job to the processing queue.`);
+    }
+  }
 }
 
 

@@ -1,8 +1,9 @@
 import { BaseInteraction, Snowflake } from "discord.js"
 
 export interface DiscordResponse {
-  message: string;
   interactionId: Snowflake
+  content?: string;
+  files?: string [];
 }
 
 interface Interactions {
