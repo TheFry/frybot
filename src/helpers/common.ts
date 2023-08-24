@@ -12,7 +12,7 @@ export interface ChannelEvent {
 export interface ClipJob {
   video: YTSearchResult;
   startTime: string;
-  duration: Number;
+  duration: number;
   interactionId: Snowflake;
 }
 

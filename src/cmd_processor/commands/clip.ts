@@ -24,7 +24,7 @@ const MODAL_TITLE_LENGTH = 45;
 interface ModalData {
   link: string;
   startTime: TimeConverterReturn;
-  duration: Number;
+  duration: number;
   interaction: ModalMessageModalSubmitInteraction;
 }
 

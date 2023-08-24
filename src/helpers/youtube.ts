@@ -39,7 +39,7 @@ async function request(url: string, params: any): Promise<YTSearchResult[]> {
 }
 
 
-export async function search(query: string, count: Number, key: string): Promise<Array<YTSearchResult>> {
+export async function search(query: string, count: number, key: string): Promise<Array<YTSearchResult>> {
   return await(request(SEARCH_ENDPOINT, {
     q: query,
     key: key,
