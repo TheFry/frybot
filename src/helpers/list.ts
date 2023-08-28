@@ -1,21 +1,34 @@
+import { Mutex } from "async-mutex";
+import { EventEmitter, once } from "events";
+import { setTimeout } from "timers/promises";
+
+const PUSH_EVENT = 'push';
+
 export class List<T> {
   head: Node<T> | null;
   tail: Node<T> | null;
   len: number;
+  #listEvents: EventEmitter;
+  #blockMutex: Mutex;
+
 
   constructor(data?: T) {
     this.head = data !== undefined ? new Node(null, null, data) : null;
     this.tail = this.head;
     this.len = data !== undefined ? 1 : 0;
+    this.#listEvents = new EventEmitter();
+    this.#blockMutex = new Mutex();
   }
 
-  private newHead(data: T) {
+
+  private newHead(data: T): void {
     this.head = new Node(null, null, data);
     this.tail = this.head;
     this.len = 1;
   }
 
-  lpush(data: T) {
+
+  lpush(data: T): void {
     if(!this.head) {
       this.newHead(data);
       return;
@@ -24,7 +37,9 @@ export class List<T> {
     this.head.pnode = node;
     this.head = node;
     this.len++;
+    this.#listEvents.emit(PUSH_EVENT, PUSH_EVENT);
   }
+
 
   lpop(): T | null {
     if(!this.head) return null;
@@ -36,7 +51,8 @@ export class List<T> {
     return data;
   }
 
-  rpush(data: T) {
+
+  rpush(data: T): void {
     if(!this.tail) {
       this.newHead(data);
       return;
@@ -45,7 +61,9 @@ export class List<T> {
     this.tail.nnode = node;
     this.tail = node;
     this.len++;
+    this.#listEvents.emit(PUSH_EVENT, PUSH_EVENT);
   }
+
 
   rpop(): T | null {
     if(!this.tail) return null;
@@ -57,7 +75,30 @@ export class List<T> {
     return data;
   }
 
-  listAll() {
+
+  async brpop(timeout?: number): Promise<T | null> {
+    await this.#blockMutex.acquire();
+    let data = this.rpop();
+    if(data || timeout === 0) {
+      this.#blockMutex.release();
+      return data;
+    }
+
+    timeout = timeout ? timeout * 1000 : undefined;
+    let promises: Promise<any> [] = [];
+    promises.push(once(this.#listEvents, PUSH_EVENT));
+    if(timeout !== undefined) promises.push(setTimeout(timeout, [null]));
+    let event = (await Promise.race(promises))[0];
+    
+    let res;
+    if(event === PUSH_EVENT) res = this.rpop();
+    else res = null;
+    this.#blockMutex.release();
+    return res;
+  }
+
+
+  listAll(): void {
     let node = this.head;
     while(node) {
       console.log(node.data);
