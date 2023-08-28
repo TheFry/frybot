@@ -1,8 +1,9 @@
-import { Mutex } from "async-mutex";
+import { E_CANCELED, Mutex } from "async-mutex";
 import { EventEmitter, once } from "events";
 import { setTimeout } from "timers/promises";
 
 const PUSH_EVENT = 'push';
+const CANCEL_EVENT = 'cancel';
 
 export class List<T> {
   head: Node<T> | null;
@@ -77,7 +78,16 @@ export class List<T> {
 
 
   async brpop(timeout?: number): Promise<T | null> {
-    await this.#blockMutex.acquire();
+    try {
+      await this.#blockMutex.acquire();
+    } catch(err) {
+      if(err === E_CANCELED) return null;
+      else {
+        console.log(`List Mutex Aquire Error - ${err}`);
+        return null;
+      }
+    }
+    
     let data = this.rpop();
     if(data || timeout === 0) {
       this.#blockMutex.release();
@@ -87,6 +97,7 @@ export class List<T> {
     timeout = timeout ? timeout * 1000 : undefined;
     let promises: Promise<any> [] = [];
     promises.push(once(this.#listEvents, PUSH_EVENT));
+    promises.push(once(this.#listEvents, CANCEL_EVENT));
     if(timeout !== undefined) promises.push(setTimeout(timeout, [null]));
     let event = (await Promise.race(promises))[0];
     
@@ -95,6 +106,12 @@ export class List<T> {
     else res = null;
     this.#blockMutex.release();
     return res;
+  }
+
+
+  destroy() {
+    this.#blockMutex.cancel();
+    this.#listEvents.emit(CANCEL_EVENT);
   }
 
 
