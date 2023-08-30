@@ -28,7 +28,7 @@ The interaction processor handles all user interaction. It waits for ChatInputCo
 - `/play-many` - Adds a list of youtube links to the channel's queue for voicebots to process.
 - `/stop` - Sends a signal to redis which triggers the voicebot to stop and delete the queue.
 - `/skip` - Sends a signal to redis which triggers the voicebot to skip to the next song.
-- `/clip` - Clip a youtube video and return the audio. Useful for creating soundboard entries. (In progress)
+- `/clip` - Clip a youtube video and return the audio. Useful for creating soundboard entries.
 
 ### Voice Bots
 
