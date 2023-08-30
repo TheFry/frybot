@@ -246,9 +246,7 @@ export class VoiceBot {
 
   async processEvents(): Promise<void> {
     while(this.readyForEvents) {
-      console.log('test');
       let event = await this.eventList.brpop();
-      console.log(event);
       if(!event) continue;
       
       switch(event.type) {
