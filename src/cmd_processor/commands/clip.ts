@@ -1,5 +1,3 @@
-const ffmpeg = require('fluent-ffmpeg');
-import { rmSync } from 'fs';
 import { SlashCommandBuilder, 
   ActionRowBuilder, 
   ButtonBuilder, 
@@ -13,8 +11,10 @@ import { SlashCommandBuilder,
   ButtonInteraction,
   ModalMessageModalSubmitInteraction } from 'discord.js';
 
-import * as yt from '../helpers/youtube';
-import { timeConverter, TimeConverterReturn } from '../helpers/common';
+import * as yt from '../../helpers/youtube';
+import { enqueue } from '../../helpers/message_queue';
+import { addInteraction } from '../../helpers/interactions';
+import { CLIP_QUEUE_KEY, ClipJob, timeConverter, TimeConverterReturn } from '../../helpers/common';
 import { randomBytes } from 'crypto';
 
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
@@ -24,31 +24,9 @@ const MODAL_TITLE_LENGTH = 45;
 interface ModalData {
   link: string;
   startTime: TimeConverterReturn;
-  duration: Number;
+  duration: number;
+  interaction: ModalMessageModalSubmitInteraction;
 }
-
-async function trimVideo(modalData: ModalData, outputFilePath: string, interaction: ChatInputCommandInteraction) {
-  let ytStream = await yt.download(modalData.link);
-  await ffmpeg(ytStream)
-    .setStartTime(modalData.startTime.str)
-    .setDuration(modalData.duration)
-    .output(outputFilePath)
-    .on('end', async () => {
-      console.log('Trimming and limiting size complete');
-      try {
-        await interaction.editReply({ content: `Here's your file`, files: [outputFilePath] });
-      } catch(err) {
-        console.log(err);
-        await interaction.editReply({ content: 'Error: Video size too large' });
-      }
-      rmSync(outputFilePath);
-    })
-    .on('error', (err : Error) => {
-      console.error('Error trimming and limiting size of MP3:', err);
-    })
-    .run();
-}
-
 
 async function getModalData(interaction: ButtonInteraction, videoData: yt.YTSearchResult): Promise<ModalData | null> {
   const startTimeId = 'startTime';
@@ -96,6 +74,7 @@ async function getModalData(interaction: ButtonInteraction, videoData: yt.YTSear
   await interaction.showModal(modal);
   try {
     submission = await interaction.awaitModalSubmit({ time: 600_000, filter: modalFilter }) as ModalMessageModalSubmitInteraction;
+    addInteraction(submission);
   } catch(err) {
     interaction.editReply({ content: 'Timeout waiting for input', components: [] });
     return null;
@@ -107,7 +86,7 @@ async function getModalData(interaction: ButtonInteraction, videoData: yt.YTSear
   let link = submission.fields.getTextInputValue(urlId);
   
   if(isNaN(duration) || duration <= 0) return null;
-  return { link, startTime, duration }
+  return { link, startTime, duration, interaction: submission };
 }
 
 
@@ -136,8 +115,6 @@ async function getSelection(interaction: ChatInputCommandInteraction, query: str
       .setStyle(ButtonStyle.Danger)
   ));
   
-
-
   let button: ButtonInteraction | null = null;
   let selectedVideo: yt.YTSearchResult | null = null;
   let message = await interaction.editReply({ content: `https://www.youtube.com/watch?v=${searchData[0].id}`, components: rows });
@@ -218,7 +195,20 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   await interaction.editReply({ content: `Editing ${selection?.name}`, components: [] })
   modalData = await getModalData(modalInteraction, selection);
   if(!modalData) return;
-  await trimVideo(modalData, `${await randomBytes(16).toString('hex')}.mp3`, interaction);
+  let job: ClipJob = {
+    video: selection,
+    startTime: modalData.startTime.str,
+    duration: modalData.duration,
+    interactionId: modalData.interaction.id
+  }
+  
+  let res = (await enqueue(CLIP_QUEUE_KEY, [job]))[0]
+  if(res) {
+    if(res.error || res.status?.jsonSet !== 'OK') {
+      console.log(`Error adding clip job - ${JSON.stringify(res)}}`);
+      await modalData.interaction.editReply(`Failed adding clip job to the processing queue.`);
+    }
+  }
 }
 
 

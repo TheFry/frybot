@@ -1,6 +1,32 @@
-import { Client } from 'discord.js';
+import { Client, Snowflake } from 'discord.js';
+import { YTSearchResult } from './youtube';
 
 export class DiscordClient extends Client { commands: any };
+
+export enum ChannelEventType {
+  Stop = 1,
+  Skip
+} 
+
+export interface ChannelEvent {
+	type: ChannelEventType;
+	channelId: Snowflake;
+  interactionId?: Snowflake;
+}
+
+export interface ClipJob {
+  video: YTSearchResult;
+  startTime: string;
+  duration: number;
+  interactionId: Snowflake;
+}
+
+export const FREE_CHANNELS_KEY = 'frybot:free-channels';
+export const WATCHED_CHANNELS_KEY = 'frybot:reserved-channels';
+export const CHANNEL_EVENT_KEY = 'discord:channel-events';
+export const CLIP_QUEUE_KEY =  'frybot:clip-jobs-queue';
+export const INTERACTION_QUEUE_KEY = 'frybot:interaction-queue';
+export const MEDIA_DIR = '/frybot_media';
 
 function usage(missing: string): void {
   console.log(`

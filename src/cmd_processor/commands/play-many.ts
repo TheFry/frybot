@@ -1,13 +1,23 @@
-import { ActionRowBuilder, ButtonInteraction, ChatInputCommandInteraction, GuildMember, ModalBuilder, ModalData, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
-import { Guild } from '../helpers/guild';
-import { guildList } from "../helpers/guild";
+import { ActionRowBuilder, 
+  ChatInputCommandInteraction,
+  GuildMember,
+  ModalBuilder,
+  ModalMessageModalSubmitInteraction,
+  ModalSubmitInteraction,
+  SlashCommandBuilder,
+  TextInputBuilder,
+  TextInputStyle } from "discord.js";
+  
 import { randomBytes } from "crypto";
-import * as yt from '../helpers/youtube';
+import * as yt from '../../helpers/youtube';
+import { redisClient } from "../../helpers/redis";
+import { addSong } from "../../helpers/playlist";
+import { FREE_CHANNELS_KEY, WATCHED_CHANNELS_KEY } from "../../helpers/common";
 
 const DEBUG = process.env["DEBUG"] === "1" ? true : false;
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
 
-async function getModalData(interaction: ChatInputCommandInteraction): Promise<string> {
+async function getModalData(interaction: ChatInputCommandInteraction): Promise<[string [], ModalMessageModalSubmitInteraction | null]> {
   const modalId = await randomBytes(16).toString('hex');
   const linksId = await randomBytes(16).toString('hex');
 
@@ -32,7 +42,7 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<s
     submission = await interaction.awaitModalSubmit({ time: 600_000, filter: modalFilter }) as ModalMessageModalSubmitInteraction;
   } catch(err) {
     console.log(err);
-    return '';
+    return [[], null];
   }
   
   await submission.reply('Verifying Links...');
@@ -58,30 +68,36 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<s
   }
 
   await submission.editReply(reply);
-  return links.map(link => new URL(link).searchParams.get('v')).join(',');
+  return [links.map(link => new URL(link).searchParams.get('v')) as string [], submission];
 }
 
 
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const member = interaction.member as GuildMember;
-  let guild = guildList[member.guild.id];
-  if(!guild) {
-    guild = new Guild(member.guild.id);
-    guildList[member.guild.id] = guild;
-  } else if(guild.checkTimeout()) {
-    guild.setIdleTimeout(0);
+  const channelId = member.voice.channelId;
+  
+  if(!channelId) {
+    await interaction.editReply('You must be in a voice channel to play music!');
+    return;
   }
 
-  if(!guild.checkInitAudio()) {
-    let member = interaction.member as GuildMember;
-    await guild.initAudio(member);
-  } 
-
   let ids = (await getModalData(interaction));
-  if(ids === '') return;
-  let videos = await yt.list(ids, YT_TOKEN);
-  for(let video of Object.values(videos)) {
-    await guild?.addSong(video.name, video.id);
+  if(ids[0].length === 0) return;
+
+  // Throw the guildId in redis with the channel id as a key
+  // Voicebots use this rather than querying discord for it
+  await redisClient?.setnx(`discord:channel:${channelId}:guild-id`, member.guild.id);
+  await redisClient?.checkIfWatched(WATCHED_CHANNELS_KEY, FREE_CHANNELS_KEY, channelId);
+  let videos = (await yt.list(ids[0], YT_TOKEN)).map(vid => ({ youtubeVideoId: vid.id, youtubeVideoTitle: vid.name, interactionId: interaction.id }));
+  
+  try {
+    await addSong(channelId, videos);
+  } catch(err) {
+    console.log(`play-many error channel ${channelId} - ${err}`);
+    if(ids[1]) {
+      ids[1].editReply('Error adding songs');
+    }
+    return;
   }
 }
 

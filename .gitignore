@@ -1,6 +1,5 @@
-.token
-.dc-client
-.gid
-.yt-key
 node_modules
 built
+container/.vars
+.vscode
+testing
