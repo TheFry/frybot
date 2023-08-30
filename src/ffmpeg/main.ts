@@ -47,7 +47,7 @@ async function clip(job: ClipJob) {
 
 async function main() {
   let watch = true;
-
+  console.log(`Watching ${CLIP_QUEUE_KEY} for jobs`);
   while(watch) {
     let res = (await dequeue(CLIP_QUEUE_KEY, 1, 0))[0];
     if(res && res.error) {
@@ -55,8 +55,14 @@ async function main() {
       continue;
     }
 
-    if(!res.message) {
-      console.log(`Error dequeueing from interaction queue - no message object`);
+    if(!res ||
+      !res.message ||
+      !res.message.duration || 
+      !res.message.interactionId || 
+      !res.message.startTime || 
+      !res.message.video) 
+    {
+      console.log(`Error dequeueing from interaction queue - invalid message object\n${res}`);
       continue;
     }
 
