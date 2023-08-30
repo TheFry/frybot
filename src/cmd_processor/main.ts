@@ -75,6 +75,10 @@ async function respond() {
     }
 
     let { content, files, interactionId } = res.message as DiscordResponse;
+    if(!content || !files || !interactionId) {
+      console.log(`Error dequeueing from interaction queue - invalid message object\n${res}`);
+      continue;
+    }
     let interaction = interactions[interactionId];
     if(interactions) {
       if(interaction.isChatInputCommand() || interaction.isModalSubmit()) {
