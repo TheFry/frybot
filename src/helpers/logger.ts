@@ -14,7 +14,7 @@ export enum LogType {
 
 export interface LogOptions {
   msg: string;
-  type: LogType;
+  type?: LogType;
 }
 
 export interface DCLogOptions extends LogOptions {
@@ -62,7 +62,8 @@ export async function logDiscord(options: DCLogOptions) {
 
 export function logConsole(options: LogOptions) {
   let msg = `${ts()} ${options.msg}`;
-  switch(options.type) {
+  let logType = options.type || LogType.Debug;
+  switch(logType) {
     case LogType.Debug:
       if(LOG_LEVEL >= LogType.Debug) console.debug(`\x1b[${DEBUG_COLOR}m%s\x1b[0m`, msg);
       break;
