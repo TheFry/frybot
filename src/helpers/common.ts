@@ -3,10 +3,15 @@ import { YTSearchResult } from './youtube';
 
 export class DiscordClient extends Client { commands: any };
 
+export enum ChannelEventType {
+  Stop = 1,
+  Skip
+} 
+
 export interface ChannelEvent {
-	eventName: string;
+	type: ChannelEventType;
 	channelId: Snowflake;
-  interactionId: Snowflake;
+  interactionId?: Snowflake;
 }
 
 export interface ClipJob {

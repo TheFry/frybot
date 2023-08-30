@@ -80,6 +80,8 @@ async function reserveChannels(redisClient: Redis) {
 			return 1;
 		}
 		
+		bot.readyForEvents = true;
+		bot.processEvents();
 		console.log(`Success! Watching channel ${channelId}`);
 		await redisClient.setnx(`discord:channel:${channelId}:bot-id`, client.application?.id as string)
 		return 0;
@@ -135,7 +137,7 @@ async function watchChannelEvents(redisClient: Redis) {
 			return;
 		}
 
-		if(!event.eventName || !event.channelId) {
+		if(!event.type || !event.channelId) {
 			console.log(`Channel event subscriber error - Invalid event\n${JSON.stringify(event, null, 2)}`);
 			return;
 		}
@@ -143,18 +145,8 @@ async function watchChannelEvents(redisClient: Redis) {
 		if(!Object.keys(voicebotList).includes(event.channelId)) return;
 		let bot = voicebotList[event.channelId];
 
-		if(event.eventName === 'stop' && bot !== undefined) {
-			console.log(`Channel ${event.channelId} - user requested stop`);
-			await bot.resourceLock.acquire();
-			await bot.stop();
-			bot.resourceLock.release();
-		}
-
-		if(event.eventName === 'skip' && bot !== undefined) {
-			console.log(`Channel ${event.channelId} - user requested skip`);
-			await bot.resourceLock.acquire();
-			await bot.playNext(true);
-			bot.resourceLock.release();
+		if(bot !== undefined && bot.readyForEvents) {
+			bot.eventList.lpush(event);
 		}
 	})
 

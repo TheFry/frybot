@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { redisClient } from '../../helpers/redis';
-import { CHANNEL_EVENT_KEY, ChannelEvent } from '../../helpers/common';
+import { CHANNEL_EVENT_KEY, ChannelEvent, ChannelEventType } from '../../helpers/common';
 
 const DEBUG = process.env['DEBUG'] === "1" ? true : false
 
@@ -11,7 +11,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
     interaction.editReply(`You need to be in a voice channel to run this command`);
   }
   await redisClient?.publish(CHANNEL_EVENT_KEY, JSON.stringify({
-    eventName: 'stop',
+    type: ChannelEventType.Stop,
     channelId: member.voice.channelId,
     interactionId: interaction.id
   } as ChannelEvent));

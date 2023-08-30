@@ -19,6 +19,8 @@ import { redisClient } from '../helpers/redis';
 import { getSong, addSong } from '../helpers/playlist';
 import { dequeue } from '../helpers/message_queue';
 import { Mutex } from 'async-mutex';
+import { List } from '../helpers/list';
+import { ChannelEvent, ChannelEventType } from '../helpers/common';
 
 const VOICE_VOLUME = 0.15
 
@@ -52,7 +54,6 @@ interface ConnectOptions {
   channelName?: string;
 }
 
-
 export class VoiceBot {
   guildId: Snowflake;
   channelId: Snowflake;
@@ -62,6 +63,8 @@ export class VoiceBot {
   audioResources: AudioResources;
   redis_queueKey: string;
   resourceLock: Mutex;
+  eventList: List<ChannelEvent>;
+  readyForEvents: boolean;
 
 
   constructor(options: ConstructorOptions) {
@@ -73,6 +76,8 @@ export class VoiceBot {
     this.isConnected = options.isConnected || true;
     this.redis_queueKey = `discord:channel:${this.channelId}:queue`;
     this.resourceLock = new Mutex();
+    this.eventList = new List();
+    this.readyForEvents = false;
   }
 
   
@@ -176,9 +181,7 @@ export class VoiceBot {
     let entry = await getSong(this.channelId, skip ? -1 : this.idleTimeout);
     if(!entry) {
       console.log(`Nothing in the queue for ${this.channelId}. Cleaning up`);
-      await this.cleanupAudio();
-      await this.releaseChannel();
-      delete voicebotList[this.channelId];
+      this.eventList.lpush({ type: ChannelEventType.Stop, channelId: this.channelId });
       return;
     }
     
@@ -212,7 +215,9 @@ export class VoiceBot {
 
 
   async stop(interactionId?: Snowflake) {
+    this.readyForEvents = false;
     this.cleanupAudio();
+    this.eventList.destroy();
     await dequeue(`${this.redis_queueKey}`, -1);
     await this.releaseChannel();
     delete connectedGuilds[this.channelId];
@@ -235,6 +240,26 @@ export class VoiceBot {
       if(fs.existsSync(`./${this.guildId}`)) fs.rmSync(`./${this.guildId}`);
     } catch(err) {
       console.log(`Cleanup error for guild ${this.guildId} - ${err}`)
+    }
+  }
+
+
+  async processEvents(): Promise<void> {
+    while(this.readyForEvents) {
+      console.log('test');
+      let event = await this.eventList.brpop();
+      console.log(event);
+      if(!event) continue;
+      
+      switch(event.type) {
+        case ChannelEventType.Stop:
+          this.readyForEvents = false;
+          await this.stop();
+          break;
+        case ChannelEventType.Skip:
+          await this.playNext(true);
+          break;
+      }
     }
   }
 }
