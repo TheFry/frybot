@@ -26,6 +26,7 @@ export class List<T> {
     this.head = new Node(null, null, data);
     this.tail = this.head;
     this.len = 1;
+    this.#listEvents.emit(PUSH_EVENT, PUSH_EVENT);
   }
 
 
@@ -87,7 +88,7 @@ export class List<T> {
         return null;
       }
     }
-    
+
     let data = this.rpop();
     if(data || timeout === 0) {
       this.#blockMutex.release();
