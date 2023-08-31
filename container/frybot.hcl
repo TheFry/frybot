@@ -27,6 +27,7 @@ job "frybot" {
         DEPLOY = 1
         // DEBUG = 1
         REDIS_URL = "redis://redis.service.consul:6379"
+        LOG_LEVEL = 3
       }
 
       resources {
@@ -66,6 +67,7 @@ job "frybot" {
 
       env {
         REDIS_URL = "redis://redis.service.consul:6379"
+        LOG_LEVEL = 3
       }
 
       resources {
@@ -97,6 +99,7 @@ job "frybot" {
 
       env {
         REDIS_URL = "redis://redis.service.consul:6379"
+        LOG_LEVEL = 3
       }
 
       resources {
@@ -128,6 +131,7 @@ job "frybot" {
 
       env {
         REDIS_URL = "redis://redis.service.consul:6379"
+        LOG_LEVEL = 3
       }
 
       resources {
@@ -159,6 +163,7 @@ job "frybot" {
 
       env {
         REDIS_URL = "redis://redis.service.consul:6379"
+        LOG_LEVEL = 3
       }
 
       resources {
