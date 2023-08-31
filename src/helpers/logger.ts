@@ -1,7 +1,7 @@
 import { Snowflake, TextChannel } from "discord.js";
 import { DiscordClient } from "./common";
 
-const DEBUG_COLOR = '34';
+const DEBUG_COLOR = '37';
 const WARN_COLOR = '33';
 const ERR_COLOR = '31';
 const LOG_LEVEL = Number(process.env['LOG_LEVEL']) || 1;
