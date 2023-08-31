@@ -20,7 +20,7 @@ Frybot is a discord bot system primarily used to play music (stay tuned for new 
 
 ### Interaction Processor
 
-The interaction processor handles all user interaction. It waits for ChatInputCommand interactions, processes user input, and adds any jobs to the appropriate queue in redis for future processing (more on the redis structure here). The processor also internally stores all interactions for 15 minutes (this is a discord limit). It watches redis for any responses from other bots and uses the stored interactions to forward the response to discord.   
+The interaction processor handles all user interaction. It waits for ChatInputCommand interactions, processes user input, and adds any jobs to the appropriate queue in redis for future processing. The processor also internally stores all interactions for 15 minutes (this is a discord limit). It watches redis for any responses from other bots and uses the stored interactions to forward the response to discord.   
 
 #### List of commands:
 
