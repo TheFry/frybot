@@ -1,6 +1,7 @@
 import { E_CANCELED, Mutex } from "async-mutex";
 import { EventEmitter, once } from "events";
 import { setTimeout } from "timers/promises";
+import { LogType, logConsole } from "./logger";
 
 const PUSH_EVENT = 'push';
 const CANCEL_EVENT = 'cancel';
@@ -84,7 +85,7 @@ export class List<T> {
     } catch(err) {
       if(err === E_CANCELED) return null;
       else {
-        console.log(`List Mutex Aquire Error - ${err}`);
+        logConsole({ msg: `List Mutex Aquire Error - ${err}`, type: LogType.Error });
         return null;
       }
     }
@@ -119,7 +120,7 @@ export class List<T> {
   listAll(): void {
     let node = this.head;
     while(node) {
-      console.log(node.data);
+      logConsole({ msg: `${node.data}` });
       node = node.nnode;
     }
   }

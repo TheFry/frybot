@@ -1,6 +1,7 @@
 import axios from 'axios';
 import ytdl from '@distube/ytdl-core';
 import fs, { ReadStream } from 'fs';
+import { LogType, logConsole } from './logger';
 
 const SEARCH_ENDPOINT = 'https://www.googleapis.com/youtube/v3/search';
 const LIST_ENDPOINT = 'https://www.googleapis.com/youtube/v3/videos';
@@ -20,11 +21,11 @@ async function request(url: string, params: any): Promise<YTSearchResult[]> {
     });
   } catch(err: any) {
     if(err.response) {
-      console.log(err.response.data);
-      console.log(err.response.status);
-      console.log(err.response.headers);
+      logConsole({ msg: err.response.data, type: LogType.Error });
+      logConsole({ msg: err.response.status, type: LogType.Error });
+      logConsole({ msg: err.response.headers, type: LogType.Error });
     } else {
-      console.log(err);
+      logConsole({ msg: err, type: LogType.Error });
     }
     return[];
   }
@@ -59,7 +60,6 @@ export async function list(ids: string[], key: string): Promise<Array<YTSearchRe
       type: 'video',
       part: 'snippet,id',
     }));
-    console.log(batch);
     results = results.concat(batch);
   }
   return results;
@@ -82,7 +82,7 @@ export async function download(songId: string, path?: string): Promise<fs.ReadSt
       resolve(fs.createReadStream(path));
     });
     download.on('error', (err) => {
-      console.log(err);
+      logConsole({ msg: `${err}`, type: LogType.Error });
       reject(null);
     })
   })

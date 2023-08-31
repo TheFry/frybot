@@ -13,6 +13,7 @@ import * as yt from '../../helpers/youtube';
 import { redisClient } from "../../helpers/redis";
 import { addSong } from "../../helpers/playlist";
 import { FREE_CHANNELS_KEY, WATCHED_CHANNELS_KEY } from "../../helpers/common";
+import { LogType, logConsole } from "../../helpers/logger";
 
 const DEBUG = process.env["DEBUG"] === "1" ? true : false;
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
@@ -41,7 +42,7 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<[
   try {
     submission = await interaction.awaitModalSubmit({ time: 600_000, filter: modalFilter }) as ModalMessageModalSubmitInteraction;
   } catch(err) {
-    console.log(err);
+    logConsole({ msg: `${err}`, type: LogType.Error });
     return [[], null];
   }
   
@@ -93,7 +94,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   try {
     await addSong(channelId, videos);
   } catch(err) {
-    console.log(`play-many error channel ${channelId} - ${err}`);
+    logConsole({ msg: `play-many error channel ${channelId} - ${err}`, type: LogType.Error });
     if(ids[1]) {
       ids[1].editReply('Error adding songs');
     }

@@ -21,6 +21,7 @@ import { dequeue } from '../helpers/message_queue';
 import { Mutex } from 'async-mutex';
 import { List } from '../helpers/list';
 import { ChannelEvent, ChannelEventType } from '../helpers/common';
+import { LogType, logConsole } from '../helpers/logger';
 
 const VOICE_VOLUME = 0.15
 
@@ -128,7 +129,7 @@ export class VoiceBot {
     await entersState(player, AudioPlayerStatus.Idle, 5000);
     let audioResources = { player: player };
     connection.subscribe(player);
-    console.log(`Guild ${options.guildId} - audio player initialized in idle state to channel ${options.channelId} | ${options.channelName}`);
+    logConsole({msg: `Guild ${options.guildId} - audio player initialized in idle state to channel ${options.channelId} | ${options.channelName}`});
     return audioResources;
   }
 
@@ -144,8 +145,8 @@ export class VoiceBot {
 
   async addPlayerHandlers() {
     this.audioResources.player.on('error', err => {
-      console.log(`Audio Player error channel ${this.channelId}`);
-      console.log(err);
+      logConsole({ msg: `Audio Player error channel ${this.channelId}`, type: LogType.Error });
+      logConsole({ msg: `${err}`, type: LogType.Error });
     })
 
     this.audioResources.player.on(AudioPlayerStatus.Idle, async (oldSate) => {
@@ -155,14 +156,14 @@ export class VoiceBot {
           try {
             await this.playNext();
           } catch(err) {
-            console.log(`Failed playing song - ${err}`);
+            logConsole({ msg: `Failed playing song - ${err}`, type: LogType.Error });
             this.cleanupAudio();
             await this.releaseChannel(true);
           } 
           await this.resourceLock.release();
           break;
         case AudioPlayerStatus.Buffering:
-          console.log('Was buffering or something');
+          logConsole({ msg: 'Was buffering or something', type: LogType.Error });
       }
     })
   }
@@ -180,7 +181,7 @@ export class VoiceBot {
 
     let entry = await getSong(this.channelId, skip ? -1 : this.idleTimeout);
     if(!entry) {
-      console.log(`Nothing in the queue for ${this.channelId}. Cleaning up`);
+      logConsole({ msg: `Nothing in the queue for ${this.channelId}. Cleaning up` });
       this.eventList.lpush({ type: ChannelEventType.Stop, channelId: this.channelId });
       return;
     }
@@ -190,14 +191,14 @@ export class VoiceBot {
         this.audioResources.readStream = await download(entry.youtubeVideoId, this.guildId);
         break;
       } catch(err) {
-        console.log(err);
+        logConsole({ msg: `${err}`, type: LogType.Error });
         retries--;
       }
     }
 
     // Failed downloading youtube video. For now, just skip the video
     if(!this.audioResources.readStream) {
-      console.log(`Skipping ${entry.youtubeVideoId}`);
+      logConsole({ msg: `Skipping ${entry.youtubeVideoId}`, type: LogType.Warn });
       return;
     }
 
@@ -210,7 +211,7 @@ export class VoiceBot {
       throw err;
     }
 
-    console.log(`Channel ${this.channelId} - playing ${entry.youtubeVideoTitle}`);
+    logConsole({ msg: `Channel ${this.channelId} - playing ${entry.youtubeVideoTitle}`, type: LogType.Debug });
   }
 
 
@@ -227,7 +228,7 @@ export class VoiceBot {
 
   // Helper function to clean up guild resources.
   cleanupAudio(): void {
-    console.log(`Guild ${this.guildId} cleanup`);
+    logConsole({ msg: `Guild ${this.guildId} cleanup`, type: LogType.Debug });
     this.audioResources.player.removeAllListeners(AudioPlayerStatus.Idle);
     this.audioResources.player.stop();
     if(this.audioResources.readStream) this.audioResources.readStream.close();
@@ -239,7 +240,7 @@ export class VoiceBot {
       if(channel) channel.destroy();
       if(fs.existsSync(`./${this.guildId}`)) fs.rmSync(`./${this.guildId}`);
     } catch(err) {
-      console.log(`Cleanup error for guild ${this.guildId} - ${err}`)
+      logConsole({ msg: `Cleanup error for guild ${this.guildId} - ${err}`, type: LogType.Error })
     }
   }
 

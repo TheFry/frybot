@@ -5,6 +5,7 @@ import { addInteraction, DiscordResponse, interactions } from '../helpers/intera
 import { newClient as newRedisClient } from '../helpers/redis';
 import { dequeue } from '../helpers/message_queue';
 import { rmSync } from 'fs';
+import { LogType, logConsole } from '../helpers/logger';
 
 checkVars();
 const DC_TOKEN = process.env['DC_TOKEN'] || '';
@@ -16,13 +17,13 @@ const client: DiscordClient = new Client({ intents: [GatewayIntentBits.Guilds, G
 
 client.login(DC_TOKEN)
   .catch((err) => { 
-    console.log(err);
+    logConsole({ msg: `${err}`, type: LogType.Error });
     process.exit(1);
   })
 
 
 client.once('ready', async () => {
-  console.log('Client logged in!');
+  logConsole({ msg: 'Client logged in!' });
   await newRedisClient();
   client.commands = new Collection();
   loadCommands(client, DC_TOKEN, DC_CLIENT, '../cmd_processor/commands', G_ID);
@@ -44,7 +45,7 @@ client.on('interactionCreate', async (interaction: Interaction) => {
   try {
     await command.execute(interaction);
   } catch (error) {
-    console.error(error);
+    logConsole({ msg: `${error}`, type: LogType.Error });
     let errMsg = { content: 'There was an error while executing this command!', ephemeral: true };
     try {
       if(interaction.replied) {
@@ -53,7 +54,7 @@ client.on('interactionCreate', async (interaction: Interaction) => {
         await interaction.reply(errMsg);
       }
     } catch(err) {
-      console.log(`Error trying to send error ??? - ${err}`);
+      logConsole({ msg: `Error trying to send error ??? - ${err}`, type: LogType.Error });
     }
   }
 })
@@ -65,18 +66,18 @@ async function respond() {
   while(watch) {
     let res = (await dequeue(INTERACTION_QUEUE_KEY, 1, 0))[0];
     if(res && res.error) {
-      console.log(`Error dequeueing from interaction queue - ${res.error}`);
+      logConsole({ msg: `Error dequeueing from interaction queue - ${res.error}`, type: LogType.Error });
       continue;
     }
 
     if(!res.message) {
-      console.log(`Error dequeueing from interaction queue - no message object`);
+      logConsole({ msg: `Error dequeueing from interaction queue - no message object`, type: LogType.Error });
       continue;
     }
 
     let { content, files, interactionId } = res.message as DiscordResponse;
     if(!content || !files || !interactionId) {
-      console.log(`Error dequeueing from interaction queue - invalid message object\n${res}`);
+      logConsole({ msg: `Error dequeueing from interaction queue - invalid message object\n${res}`, type: LogType.Error });
       continue;
     }
     let interaction = interactions[interactionId];
@@ -89,7 +90,7 @@ async function respond() {
             await interaction.editReply({ content: content ? content : '', files: files ? files : [] });
           }
         } catch(err) {
-          console.log(`Interaction Reply error - ${err}`)
+          logConsole({ msg: `Interaction Reply error - ${err}`, type: LogType.Error })
           continue;
         }
         
@@ -102,7 +103,7 @@ async function respond() {
           })
         }
       } else {
-        console.log(`Didn't handle interaction type ${interaction.type}`);
+        logConsole({ msg: `Didn't handle interaction type ${interaction.type}`, type: LogType.Warn });
       }
     }
 

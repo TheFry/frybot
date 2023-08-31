@@ -16,6 +16,7 @@ import { enqueue } from '../../helpers/message_queue';
 import { addInteraction } from '../../helpers/interactions';
 import { CLIP_QUEUE_KEY, ClipJob, timeConverter, TimeConverterReturn } from '../../helpers/common';
 import { randomBytes } from 'crypto';
+import { logConsole, LogType } from '../../helpers/logger';
 
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
 const DEBUG = process.env['DEBUG'] === "1" ? true : false;
@@ -205,7 +206,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   let res = (await enqueue(CLIP_QUEUE_KEY, [job]))[0]
   if(res) {
     if(res.error || res.status?.jsonSet !== 'OK') {
-      console.log(`Error adding clip job - ${JSON.stringify(res)}}`);
+      logConsole({ msg: `Error adding clip job - ${JSON.stringify(res)}}`, type: LogType.Error });
       await modalData.interaction.editReply(`Failed adding clip job to the processing queue.`);
     }
   }

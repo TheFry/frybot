@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { Client, REST, Routes  } from 'discord.js';
+import { LogType, logConsole } from './logger';
 class DiscordClient extends Client { commands: any }
 
 const DEPLOY = process.env['DEPLOY'] ? true : false;
@@ -14,7 +15,7 @@ export default async function load(client: DiscordClient, token: string, clientI
   const rest = new REST({ version: '10' }).setToken(token);
   const commands = [];
 
-  console.log(`Loading commands${DEPLOY ? " and re-deploying!" : "!"}`)
+  logConsole({ msg: `Loading commands${DEPLOY ? " and re-deploying!" : "!"}`, type: LogType.Debug });
 
   for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
@@ -26,13 +27,13 @@ export default async function load(client: DiscordClient, token: string, clientI
   if(!guildID) return
   if(DELETE) {
     await rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: {} });
-    console.log(`Deleted commands from guild ${guildID}`);
+    logConsole({ msg: `Deleted commands from guild ${guildID}` });
     await rest.put(Routes.applicationCommands(clientID), { body: {} });
-    console.log(`Deleted commands globally`)
+    logConsole({ msg: `Deleted commands globally` })
   }
 
   if(DEPLOY) {
     const data: any = await rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: commands })
-    console.log(`Successfully registered ${data.length} application commands.`)
+    logConsole({ msg: `Successfully registered ${data.length} application commands.` })
   }
 }

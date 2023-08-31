@@ -1,6 +1,7 @@
 import Redis, { Result, Callback } from "ioredis";
 import { readFileSync } from "fs";
 import { Snowflake } from "discord.js";
+import { LogOptions, LogType, logConsole } from "./logger";
 
 const REDIS_URL = process.env['REDIS_URL'] || 'redis://localhost:6379';
 const REDIS_SCRIPT_DIR = './redis_scripts';
@@ -40,7 +41,7 @@ export async function newClient(url: string = REDIS_URL) {
     lua: readFileSync(`${REDIS_SCRIPT_DIR}/checkIfWatched.lua`).toString(),
   })
 
-  newClient.on('error', err => console.log('Redis Client Error', err));
+  newClient.on('error', err => logConsole({msg: `Redis Client Error - ${err}`, type: LogType.Error}));
   redisClient = newClient;
   return newClient;
 }

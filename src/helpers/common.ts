@@ -1,5 +1,6 @@
 import { Client, Snowflake } from 'discord.js';
 import { YTSearchResult } from './youtube';
+import { LogType, logConsole } from './logger';
 
 export class DiscordClient extends Client { commands: any };
 
@@ -29,7 +30,7 @@ export const INTERACTION_QUEUE_KEY = 'frybot:interaction-queue';
 export const MEDIA_DIR = '/frybot_media';
 
 function usage(missing: string): void {
-  console.log(`
+  logConsole({ msg: `
   Missing variable ${missing}
 	Usage: DC_TOKEN=<bot token> \\
 		  DC_CLIENT=<bot client id> \\
@@ -37,7 +38,7 @@ function usage(missing: string): void {
 		  YT_TOKEN=<youtube key> \\
 		  MONGO_CONN_STRING=<mongodb conn string> \\
 		  node ${__dirname}/main.js
-	`);
+	`, type: LogType.Error});
 }
 
 export function checkVars(): void {

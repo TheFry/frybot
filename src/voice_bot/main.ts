@@ -5,6 +5,7 @@ import { DiscordClient, CHANNEL_EVENT_KEY, ChannelEvent, WATCHED_CHANNELS_KEY, F
 import { newClient as newRedisClient } from '../helpers/redis';
 import { VoiceBot, voicebotList, connectedGuilds } from './VoiceBot';
 import { getBotId } from '../helpers/playlist';
+import { LogType, logConsole } from '../helpers/logger';
 
 const DC_TOKEN = process.env['DC_TOKEN'] || '';
 export const client: DiscordClient = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] }) as DiscordClient;
@@ -13,13 +14,13 @@ let watchQueues = true;
 
 client.login(DC_TOKEN)
 	.catch((err) => {
-		console.log(err);
+		logConsole({ msg: `${err}`, type: LogType.Error });
 		process.exit(1);
 	})
 
 
 client.once('ready', async () => {
-	console.log('Client logged in!');
+	logConsole({ msg: 'Client logged in!' });
 	let redisClient = await newRedisClient();
 	reserveChannels(redisClient);
 	watchChannelEvents(redisClient);
@@ -28,7 +29,7 @@ client.once('ready', async () => {
 
 // Watch redis for open queues. Try to reserve one
 async function reserveChannels(redisClient: Redis) {
-	console.log(`Looking for open channels...`);
+	logConsole({ msg: `Looking for open channels...` });
 	const coolDown = 5000; // How long to wait before looking for a new queue after failure
 	let watched_guilds: any = {};
 
@@ -46,7 +47,7 @@ async function reserveChannels(redisClient: Redis) {
 				? 'There was no guildId found in redis. The cmd processor probably fucked up'
 				: `Already connected to ${guildId}`
 			}`
-			console.log(errText);
+			logConsole({ msg: `${errText}`, type: LogType.Error });
 			await releaseChannel(channelId);
 			await setTimeout(coolDown);
 			return 1;
@@ -60,7 +61,7 @@ async function reserveChannels(redisClient: Redis) {
 				voiceAdapter: (await client.guilds.fetch(guildId)).voiceAdapterCreator
 			 })
 		} catch(err) {
-			console.log(`Error creating VoiceBot - ${err}`);
+			logConsole({ msg: `Error creating VoiceBot - ${err}`, type: LogType.Error });
 			await releaseChannel(channelId);
 			return 1;
 		}	
@@ -70,7 +71,7 @@ async function reserveChannels(redisClient: Redis) {
 		try {
 			await bot.playNext();
 		} catch(err) {
-			console.log(`Error running first playNext - ${err}`);
+			logConsole({ msg: `Error running first playNext - ${err}`, type: LogType.Error });
 			await bot.resourceLock.acquire();
 			bot.cleanupAudio();
 			bot.releaseChannel(true);
@@ -82,7 +83,7 @@ async function reserveChannels(redisClient: Redis) {
 		
 		bot.readyForEvents = true;
 		bot.processEvents();
-		console.log(`Success! Watching channel ${channelId}`);
+		logConsole({ msg: `Success! Watching channel ${channelId}` });
 		await redisClient.setnx(`discord:channel:${channelId}:bot-id`, client.application?.id as string)
 		return 0;
 	}
@@ -95,7 +96,7 @@ async function reserveChannels(redisClient: Redis) {
 			try {
 				await initChannel(channel);
 			} catch(err) {
-				console.log(`Init channel error - ${err}`);
+				logConsole({ msg: `Init channel error - ${err}`, type: LogType.Error });
 			}
 		}
 	}
@@ -111,14 +112,14 @@ async function reserveChannels(redisClient: Redis) {
 		// If that's the case, only one of them will return 1 here, and the other
 		// should just ignore if 0 is returned. 
 		if(wasAdded === 0) {
-			console.log(`Looks like someone is already watching ${channelId}`);
+			logConsole({ msg: `Looks like someone is already watching ${channelId}` });
 			continue;
 		}
 
 		try {
 			await initChannel(channelId);
 		} catch(err) {
-			console.log(`Init channel error - ${err}`);
+			logConsole({ msg: `Init channel error - ${err}` });
 		}
 	} 
 }
@@ -133,12 +134,12 @@ async function watchChannelEvents(redisClient: Redis) {
 		try {
 			event = JSON.parse(message) as ChannelEvent;
 		} catch(err) {
-			console.log(`Channel event subscriber error - failed to parse message`);
+			logConsole({ msg: `Channel event subscriber error - failed to parse message`, type: LogType.Warn });
 			return;
 		}
 
 		if(!event.type || !event.channelId) {
-			console.log(`Channel event subscriber error - Invalid event\n${JSON.stringify(event, null, 2)}`);
+			logConsole({ msg: `Channel event subscriber error - Invalid event\n${JSON.stringify(event, null, 2)}`, type: LogType.Warn });
 			return;
 		}
 
@@ -151,6 +152,6 @@ async function watchChannelEvents(redisClient: Redis) {
 	})
 
 	subscriber.on('error', (err) => {
-		console.log(`Channel event subscriber error - ${err}`);
+		logConsole({ msg: `Channel event subscriber error - ${err}`, type: LogType.Error });
 	})
 }
