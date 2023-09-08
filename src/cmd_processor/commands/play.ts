@@ -51,6 +51,7 @@ async function getSelection(interaction: ChatInputCommandInteraction): Promise<A
 
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   const q = interaction.options.getString('query');
+  const next = interaction.options.getBoolean('next') || false;
   const member = interaction.member as GuildMember;
   const channelId = member.voice.channelId;
   await interaction.reply({ content: `Searcing youtube for ${q}` });
@@ -76,7 +77,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
     interactionId: interaction.id
   }
 
-  let res = await addSong(channelId, [entry]);
+  let res = await addSong(channelId, [entry], next);
 
   interaction.editReply({content: `Added ${songName} to queue`, components: []})
 }
@@ -88,6 +89,11 @@ const command = new SlashCommandBuilder()
     option.setName('query')
       .setDescription('The song to search for')
       .setRequired(true)
+  )
+  .addBooleanOption(option => 
+    option.setName('next')
+      .setDescription('Play the song next')
+      .setRequired(false)
   )
 
 module.exports = { data: command, execute };
