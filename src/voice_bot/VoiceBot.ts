@@ -16,14 +16,16 @@ import { InternalDiscordGatewayAdapterCreator, Snowflake } from 'discord.js';
 import { client } from './main';
 import { download } from '../helpers/youtube';
 import { redisClient } from '../helpers/redis';
-import { getSong, addSong } from '../helpers/playlist';
+import { getSong, addSong, PlaylistEntry } from '../helpers/playlist';
 import { dequeue } from '../helpers/message_queue';
 import { Mutex } from 'async-mutex';
 import { List } from '../helpers/list';
 import { ChannelEvent, ChannelEventType } from '../helpers/common';
 import { LogType, logConsole } from '../helpers/logger';
+import { EventEmitter, once } from 'events';
 
-const VOICE_VOLUME = 0.15
+const VOICE_VOLUME = 0.15;
+const CANCEL_WATCH_EVENT = 'stop';
 
 
 interface AudioResources {
@@ -66,6 +68,7 @@ export class VoiceBot {
   resourceLock: Mutex;
   eventList: List<ChannelEvent>;
   readyForEvents: boolean;
+  cancelWatch: EventEmitter;
 
 
   constructor(options: ConstructorOptions) {
@@ -79,6 +82,7 @@ export class VoiceBot {
     this.resourceLock = new Mutex();
     this.eventList = new List();
     this.readyForEvents = false;
+    this.cancelWatch = new EventEmitter();
   }
 
   
@@ -179,7 +183,16 @@ export class VoiceBot {
       return;
     }
 
-    let entry = await getSong(this.channelId, skip ? -1 : this.idleTimeout);
+    let promises: Promise<any> [] = [];
+    promises.push(getSong(this.channelId, skip ? -1 : this.idleTimeout));
+    promises.push(once(this.cancelWatch, CANCEL_WATCH_EVENT));
+    let event = await Promise.race(promises);
+    if(event === CANCEL_WATCH_EVENT) {
+      logConsole({ msg: `playNext cancel event on channel ${this.channelId}`});
+      return;
+    }
+
+    let entry = event as PlaylistEntry;
     if(!entry) {
       logConsole({ msg: `Nothing in the queue for ${this.channelId}. Cleaning up` });
       this.eventList.lpush({ type: ChannelEventType.Stop, channelId: this.channelId });
@@ -217,6 +230,7 @@ export class VoiceBot {
 
   async stop(interactionId?: Snowflake) {
     this.readyForEvents = false;
+    this.cancelWatch.emit(CANCEL_WATCH_EVENT);
     this.cleanupAudio();
     this.eventList.destroy();
     await dequeue(`${this.redis_queueKey}`, -1);
