@@ -4,7 +4,6 @@
     "strict": true,
     "target": "ES6",
     "noImplicitAny": true,
-    "allowJs": true,
     "outDir": "./built"
   }
 }
