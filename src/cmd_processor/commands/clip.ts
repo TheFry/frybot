@@ -92,7 +92,7 @@ async function getModalData(interaction: ButtonInteraction, videoData: yt.YTSear
 
 
 async function getSelection(interaction: ChatInputCommandInteraction, query: string): Promise<[yt.YTSearchResult, ButtonInteraction] | null> {
-  const searchData: yt.YTSearchResult [] = await yt.search(query, 5, YT_TOKEN);
+  const searchData: yt.YTSearchResult [] = await yt.search(query, 5, 'video', YT_TOKEN);
   if(searchData === null) {
     await interaction.editReply('Failed to query youtube');
     return null;
@@ -163,7 +163,8 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
     }
     selection = {
       id: url.searchParams.get('v') as string,
-      name: q
+      name: q,
+      type: 'video'
     }
     let row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()

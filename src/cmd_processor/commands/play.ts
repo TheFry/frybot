@@ -18,7 +18,7 @@ const DEBUG = process.env['DEBUG'] === "1" ? true : false
 async function getSelection(interaction: ChatInputCommandInteraction): Promise<Array<string | null>> {
   const q = interaction.options.getString('query');
   if(!q) return [null, null]
-  const searchData: yt.YTSearchResult [] = await yt.search(q, 5, YT_TOKEN);
+  const searchData: yt.YTSearchResult [] = await yt.search(q, 5, 'video', YT_TOKEN);
   if(searchData === null) {
     await interaction.editReply('Failed to query youtube');
     return [null, null];

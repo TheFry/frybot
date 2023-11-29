@@ -23,6 +23,7 @@ import { List } from '../helpers/list';
 import { ChannelEvent, ChannelEventType } from '../helpers/common';
 import { LogType, logConsole } from '../helpers/logger';
 import { EventEmitter, once } from 'events';
+import { Readable } from 'stream';
 
 const VOICE_VOLUME = 0.15;
 const CANCEL_WATCH_EVENT = 'stop';
@@ -30,7 +31,7 @@ const CANCEL_WATCH_EVENT = 'stop';
 
 interface AudioResources {
   player: AudioPlayer;
-  readStream?: fs.ReadStream;
+  readStream?: Readable;
   discordResource?: AudioResource;
 }
 
@@ -245,7 +246,7 @@ export class VoiceBot {
     logConsole({ msg: `Guild ${this.guildId} cleanup`, type: LogType.Debug });
     this.audioResources.player.removeAllListeners(AudioPlayerStatus.Idle);
     this.audioResources.player.stop();
-    if(this.audioResources.readStream) this.audioResources.readStream.close();
+    if(this.audioResources.readStream) this.audioResources.readStream.destroy();
     delete this.audioResources.readStream;
     delete this.audioResources.discordResource;
     

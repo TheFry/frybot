@@ -89,7 +89,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   // Voicebots use this rather than querying discord for it
   await redisClient?.setnx(`discord:channel:${channelId}:guild-id`, member.guild.id);
   await redisClient?.checkIfWatched(WATCHED_CHANNELS_KEY, FREE_CHANNELS_KEY, channelId);
-  let videos = (await yt.list(ids[0], YT_TOKEN)).map(vid => ({ youtubeVideoId: vid.id, youtubeVideoTitle: vid.name, interactionId: interaction.id }));
+  let videos = (await yt.list(ids[0], 'video', YT_TOKEN)).map(vid => ({ youtubeVideoId: vid.id, youtubeVideoTitle: vid.name, interactionId: interaction.id }));
   
   try {
     await addSong(channelId, videos);
