@@ -10,9 +10,9 @@ export class List<T> {
   head: Node<T> | null;
   tail: Node<T> | null;
   len: number;
+  #ac: AbortController;
   #listEvents: EventEmitter;
   #blockMutex: Mutex;
-
 
   constructor(data?: T) {
     this.head = data !== undefined ? new Node(null, null, data) : null;
@@ -20,6 +20,7 @@ export class List<T> {
     this.len = data !== undefined ? 1 : 0;
     this.#listEvents = new EventEmitter();
     this.#blockMutex = new Mutex();
+    this.#ac = new AbortController();
   }
 
 
@@ -98,22 +99,25 @@ export class List<T> {
 
     timeout = timeout ? timeout * 1000 : undefined;
     let promises: Promise<any> [] = [];
-    promises.push(once(this.#listEvents, PUSH_EVENT));
-    promises.push(once(this.#listEvents, CANCEL_EVENT));
-    if(timeout !== undefined) promises.push(setTimeout(timeout, [null]));
-    let event = (await Promise.race(promises))[0];
-    
-    let res;
-    if(event === PUSH_EVENT) res = this.rpop();
-    else res = null;
+    if(timeout !== undefined) promises.push(setTimeout(timeout, ['TIMEOUT'], { signal: this.#ac.signal }));
+    promises.push(once(this.#listEvents, PUSH_EVENT, { signal: this.#ac.signal }));
+
+    let event;
+    try {
+      event = (await Promise.race(promises))[0];
+      this.#ac.abort();
+    } catch(err: any) {
+      if(err.code !== 'ABORT_ERR') throw err;
+      event = CANCEL_EVENT;
+    }
+
     this.#blockMutex.release();
-    return res;
+    return event === PUSH_EVENT ? this.rpop() : null;
   }
 
 
-  destroy() {
-    this.#blockMutex.cancel();
-    this.#listEvents.emit(CANCEL_EVENT);
+  abortBlocks() {
+    this.#ac.abort();
   }
 
 
