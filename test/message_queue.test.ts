@@ -119,7 +119,6 @@ describe('Message Queue Tests', () => {
 
     dequeue(queueKey, count, 2)
       .then(deqs => {
-        console.log(deqs.length)
         expect(deqs.length).toBe(0);
       })
 
