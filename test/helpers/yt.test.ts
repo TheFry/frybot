@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import * as yt from '../src/helpers/youtube';
+import * as yt from '../../src/helpers/youtube';
 import { accessSync, rmSync } from 'fs';
 
 const YT_TOKEN = process.env['YT_TOKEN'] || '';

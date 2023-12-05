@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
-import { enqueue, dequeue, Message, EnqueueResponse } from '../src/helpers/message_queue';
-import { newClient } from '../src/helpers/redis';
+import { enqueue, dequeue, Message, EnqueueResponse } from '../../src/helpers/message_queue';
+import { newClient } from '../../src/helpers/redis';
 import { setTimeout } from 'timers';
 import { setTimeout as setTimeoutPromise } from 'timers/promises'
 import { Redis } from 'ioredis';

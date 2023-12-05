@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
-import { List } from '../src/helpers/list';
+import { List } from '../../src/helpers/list';
 import { setTimeout } from 'timers/promises';
 
 

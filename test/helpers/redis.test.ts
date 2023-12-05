@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { newClient, redisClient } from '../src/helpers/redis';
+import { newClient, redisClient } from '../../src/helpers/redis';
 import { Redis } from 'ioredis';
 
 

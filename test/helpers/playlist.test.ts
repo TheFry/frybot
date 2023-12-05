@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
-import { addSong, getSong } from '../src/helpers/playlist';
-import { dequeue } from '../src/helpers/message_queue';
-import { newClient, redisClient } from '../src/helpers/redis';
+import { addSong, getSong } from '../../src/helpers/playlist';
+import { dequeue } from '../../src/helpers/message_queue';
+import { newClient, redisClient } from '../../src/helpers/redis';
 
 const REDIS_URL = process.env['REDIS_URL'] || 'redis://redis.service.consul:6379';
 const CHANNEL_ID = 'test-channel-lol';
