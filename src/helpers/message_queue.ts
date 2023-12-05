@@ -69,7 +69,9 @@ export async function dequeue(queueKey: string, count: number, timeout?: number)
       if(timeout === undefined || timeout < 0) {
         uuid = await redisClient?.rpop(queueKey) as string | null;
       } else {
-        let res = await redisClient?.duplicate().brpop(queueKey, timeout);
+        let tempClient = await redisClient?.duplicate(); 
+        let res = await tempClient?.brpop(queueKey, timeout);
+        tempClient?.disconnect();
         if(res) uuid = res[1];
       }
     } catch(err) {

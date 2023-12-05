@@ -233,7 +233,7 @@ export class VoiceBot {
     this.readyForEvents = false;
     this.cancelWatch.emit(CANCEL_WATCH_EVENT);
     this.cleanupAudio();
-    this.eventList.destroy();
+    this.eventList.abortBlocks();
     await dequeue(`${this.redis_queueKey}`, -1);
     await this.releaseChannel();
     delete connectedGuilds[this.channelId];
