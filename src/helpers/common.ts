@@ -4,13 +4,9 @@ import { LogType, logConsole } from './logger';
 
 export class DiscordClient extends Client { commands: any };
 
-export enum ChannelEventType {
-  Stop = 1,
-  Skip
-} 
 
 export interface ChannelEvent {
-	type: ChannelEventType;
+	type: 'stop' | 'skip' | 'pause';
 	channelId: Snowflake;
   interactionId?: Snowflake;
 }

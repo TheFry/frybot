@@ -20,7 +20,7 @@ import { getSong, addSong, PlaylistEntry } from '../helpers/playlist';
 import { dequeue } from '../helpers/message_queue';
 import { Mutex } from 'async-mutex';
 import { List } from '../helpers/list';
-import { ChannelEvent, ChannelEventType } from '../helpers/common';
+import { ChannelEvent } from '../helpers/common';
 import { LogType, logConsole } from '../helpers/logger';
 import { EventEmitter, once } from 'events';
 import { Readable } from 'stream';
@@ -196,7 +196,7 @@ export class VoiceBot {
     let entry = event as PlaylistEntry;
     if(!entry) {
       logConsole({ msg: `Nothing in the queue for ${this.channelId}. Cleaning up` });
-      this.eventList.lpush({ type: ChannelEventType.Stop, channelId: this.channelId });
+      this.eventList.lpush({ type: 'stop', channelId: this.channelId });
       return;
     }
     
@@ -266,11 +266,11 @@ export class VoiceBot {
       if(!event) continue;
       
       switch(event.type) {
-        case ChannelEventType.Stop:
+        case 'stop':
           this.readyForEvents = false;
           await this.stop();
           break;
-        case ChannelEventType.Skip:
+        case 'skip':
           await this.playNext(true);
           break;
       }

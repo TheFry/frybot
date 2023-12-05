@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { redisClient } from '../../helpers/redis';
-import { ChannelEvent, CHANNEL_EVENT_KEY, ChannelEventType } from '../../helpers/common';
+import { ChannelEvent, CHANNEL_EVENT_KEY } from '../../helpers/common';
 
 const DEBUG = process.env['DEBUG'] === "1" ? true : false;
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -11,7 +11,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   }
 
   await redisClient?.publish(CHANNEL_EVENT_KEY, JSON.stringify({
-    type: ChannelEventType.Skip,
+    type: 'skip',
     channelId: member.voice.channelId,
     interactionId: interaction.id
   } as ChannelEvent));
