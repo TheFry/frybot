@@ -9,7 +9,9 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   await interaction.reply(`Clearing the queue`);
   if(!member.voice.channelId) {
     interaction.editReply(`You need to be in a voice channel to run this command`);
+    return;
   }
+  
   await redisClient?.publish(CHANNEL_EVENT_KEY, JSON.stringify({
     type: 'stop',
     channelId: member.voice.channelId,
