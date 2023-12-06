@@ -19,6 +19,6 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
 
 const command = new SlashCommandBuilder()
   .setName(`${DEBUG ? 'dev-pause' : 'pause'}`)
-  .setDescription('Skip to the next track')
+  .setDescription('Pause the queue')
 
 module.exports = { data: command, execute };
