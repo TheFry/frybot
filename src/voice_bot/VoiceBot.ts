@@ -20,7 +20,7 @@ import { getSong, addSong, PlaylistEntry } from '../helpers/playlist';
 import { dequeue } from '../helpers/message_queue';
 import { Mutex } from 'async-mutex';
 import { List } from '../helpers/list';
-import { ChannelEvent, ChannelEventType } from '../helpers/common';
+import { ChannelEvent } from '../helpers/common';
 import { LogType, logConsole } from '../helpers/logger';
 import { EventEmitter, once } from 'events';
 import { Readable } from 'stream';
@@ -196,7 +196,7 @@ export class VoiceBot {
     let entry = event as PlaylistEntry;
     if(!entry) {
       logConsole({ msg: `Nothing in the queue for ${this.channelId}. Cleaning up` });
-      this.eventList.lpush({ type: ChannelEventType.Stop, channelId: this.channelId });
+      this.eventList.lpush({ type: 'stop', channelId: this.channelId });
       return;
     }
     
@@ -240,6 +240,25 @@ export class VoiceBot {
     delete voicebotList[this.channelId];
   }
 
+  
+  async pause(unpause = false, interactionId?: Snowflake) {
+    let currentState = this.audioResources.player.state.status;
+    let status;
+    if(unpause && currentState == AudioPlayerStatus.Paused) {
+      status = this.audioResources.player.unpause();
+    } else if(!unpause && currentState == AudioPlayerStatus.Playing) {
+      status = this.audioResources.player.pause();
+    }
+    
+    if(!status) { 
+      let msg = `Error ${unpause ? 'unpausing' : 'pausing'} the queue`
+      logConsole({ msg: `Channel ${this.channelId} - ${msg}`, type: LogType.Error }) 
+    } else {
+      let msg = `Queue is ${unpause ? 'unpaused' : 'paused'}`
+      logConsole({ msg: `Channel ${this.channelId} - ${msg}`, type: LogType.Debug }) 
+    }
+  }
+
 
   // Helper function to clean up guild resources.
   cleanupAudio(): void {
@@ -266,12 +285,18 @@ export class VoiceBot {
       if(!event) continue;
       
       switch(event.type) {
-        case ChannelEventType.Stop:
+        case 'stop':
           this.readyForEvents = false;
           await this.stop();
           break;
-        case ChannelEventType.Skip:
+        case 'skip':
           await this.playNext(true);
+          break;
+        case 'pause':
+          await this.pause(false, event.interactionId);
+          break;
+        case 'unpause':
+          await this.pause(true, event.interactionId);
           break;
       }
     }

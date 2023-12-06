@@ -1,6 +1,6 @@
 import { E_CANCELED, Mutex } from "async-mutex";
 import { EventEmitter, once } from "events";
-import { setTimeout } from "timers/promises";
+import { setTimeout } from "timers";
 import { LogType, logConsole } from "./logger";
 
 const PUSH_EVENT = 'push';
@@ -98,24 +98,23 @@ export class List<T> {
     }
 
     timeout = timeout ? timeout * 1000 : undefined;
-    let promises: Promise<any> [] = [];
-    if(timeout !== undefined) promises.push(setTimeout(timeout, ['TIMEOUT'], { signal: this.#ac.signal }));
-    promises.push(once(this.#listEvents, PUSH_EVENT, { signal: this.#ac.signal }));
 
     let event;
+    let timerId;
     try {
-      event = (await Promise.race(promises))[0];
-      this.#ac.abort();
+      let listener = once(this.#listEvents, PUSH_EVENT, { signal: this.#ac.signal });
+      if(timeout) timerId = setTimeout(() => this.#ac.abort(), timeout);
+      event = (await listener)[0];
     } catch(err: any) {
       if(err.code !== 'ABORT_ERR') throw err;
       event = CANCEL_EVENT;
     }
-
+    if(timerId) clearTimeout(timerId);
     this.#blockMutex.release();
     return event === PUSH_EVENT ? this.rpop() : null;
   }
 
-
+  
   abortBlocks() {
     this.#ac.abort();
   }
