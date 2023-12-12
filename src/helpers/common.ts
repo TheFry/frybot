@@ -2,7 +2,8 @@ import { Client, Snowflake } from 'discord.js';
 import { YTSearchResult } from './youtube';
 import { LogType, logConsole } from './logger';
 
-export class DiscordClient extends Client { commands: any };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class DiscordClient extends Client { commands: any }
 
 
 export interface ChannelEvent {
@@ -50,7 +51,7 @@ export function timeConverter(time : string): TimeConverterReturn {
   let hours = "00";
   let minutes = "00";
   let seconds = "00";
-  let str: string, num: number;
+  
   if(time.length <= 3) {
     seconds = time.length == 1? `0`+time : time.substring(6, 8);
   } else if(time.length<=6) {
@@ -61,8 +62,8 @@ export function timeConverter(time : string): TimeConverterReturn {
     minutes = time.substring(3,5);
     seconds = time.substring(6, 8);
   }
-  str = `${hours}:${minutes}:${seconds}`;
-  num = parseInt(seconds)+ parseInt(minutes)*60 + parseInt(hours)*60*60;
+  const str = `${hours}:${minutes}:${seconds}`;
+  const num = parseInt(seconds)+ parseInt(minutes)*60 + parseInt(hours)*60*60;
   return { str:str, num:num };
 }
 
