@@ -26,7 +26,7 @@ async function getSelection(interaction: ChatInputCommandInteraction): Promise<A
 
   const rows: ActionRowBuilder<ButtonBuilder> [] = [];
   searchData.forEach((result: yt.YTSearchResult) => {
-    let label = result.name.length > MAX_BTN_TEXT ? `${result.name.slice(0, MAX_BTN_TEXT - 4)} ...` : result.name;
+    const label = result.name.length > MAX_BTN_TEXT ? `${result.name.slice(0, MAX_BTN_TEXT - 4)} ...` : result.name;
     rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
       [ new ButtonBuilder()
         .setCustomId(`${result.id}`)
@@ -61,7 +61,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
     return;
   }
   
-  let [songId, songName] = await getSelection(interaction);
+  const [songId, songName] = await getSelection(interaction);
   if(!songId || !songName) return;
   
   // Throw the guildId in redis with the channel id as a key
@@ -77,8 +77,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
     interactionId: interaction.id
   }
 
-  let res = await addSong(channelId, [entry], next);
-
+  await addSong(channelId, [entry], next);
   interaction.editReply({content: `Added ${songName} to queue`, components: []})
 }
 

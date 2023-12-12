@@ -35,7 +35,7 @@ client.on('interactionCreate', async (interaction: Interaction) => {
   if (!interaction.isChatInputCommand()) return;
   await addInteraction(interaction);
   const interactionClient = interaction.client as DiscordClient;
-  const command: any = interactionClient.commands.get(interaction.commandName);
+  const command = interactionClient.commands.get(interaction.commandName);
 
   if (!command) {
     interaction.reply('Command not registered!');
@@ -46,7 +46,7 @@ client.on('interactionCreate', async (interaction: Interaction) => {
     await command.execute(interaction);
   } catch (error) {
     logConsole({ msg: `${error}`, type: LogType.Error });
-    let errMsg = { content: 'There was an error while executing this command!', ephemeral: true };
+    const errMsg = { content: 'There was an error while executing this command!', ephemeral: true };
     try {
       if(interaction.replied) {
         await interaction.editReply(errMsg); 
@@ -61,10 +61,10 @@ client.on('interactionCreate', async (interaction: Interaction) => {
 
 
 async function respond() {
-  let watch = true;
+  const watch = true;
 
   while(watch) {
-    let res = (await dequeue(INTERACTION_QUEUE_KEY, 1, 0))[0];
+    const res = (await dequeue(INTERACTION_QUEUE_KEY, 1, 0))[0];
     if(res && res.error) {
       logConsole({ msg: `Error dequeueing from interaction queue - ${res.error}`, type: LogType.Error });
       continue;
@@ -75,12 +75,12 @@ async function respond() {
       continue;
     }
 
-    let { content, files, interactionId } = res.message as DiscordResponse;
+    const { content, files, interactionId } = res.message as DiscordResponse;
     if(!content || !files || !interactionId) {
       logConsole({ msg: `Error dequeueing from interaction queue - invalid message object\n${res}`, type: LogType.Error });
       continue;
     }
-    let interaction = interactions[interactionId];
+    const interaction = interactions[interactionId];
     if(interactions) {
       if(interaction.isChatInputCommand() || interaction.isModalSubmit()) {
         try {
@@ -99,7 +99,9 @@ async function respond() {
           files.forEach(file => {
             try {
               rmSync(file)
-            } catch { }
+            } catch { 
+              // TODO: handle failed file deletion
+            }
           })
         }
       } else {
