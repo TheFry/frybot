@@ -183,7 +183,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
     }
   } catch(err) {
     let checkedErr;
-    if(hasProperties(err, ['code']).length === 0) {
+    if(hasProperties(err, ['code'])) {
       checkedErr = err as { [code: string]: string }
     }
     

@@ -58,6 +58,7 @@ describe('checkForProps', () => {
   ]
 
   it.each(propCases)('check for properties $props on obj $obj', ({ obj, props, expected }) => {
-    expect(hasProperties(obj, props)).toEqual(expected);
+    expect(hasProperties(obj, props, true)).toEqual(expected);
+    expect(hasProperties(obj, props)).toBe(expected.length === 0 ? true : false)
   });
 });

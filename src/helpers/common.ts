@@ -68,9 +68,11 @@ export function timeConverter(time : string): TimeConverterReturn {
 }
 
 
-export function hasProperties(object: unknown, properties: string[]) {
-  const missingProperties: string[] = [];  
-  properties.forEach(property => {
+export function hasProperties(object: unknown, properties: string | string[], returnMissing = false): boolean | string[] {
+  if(typeof properties === 'string') properties = [properties];
+  const missingProperties: string[] = [];
+
+  for(const property of properties) {
     const levels = property.split('.');
     let tempObj: { [key: string]: unknown } = object as { [key: string]: unknown };
     let missing = false;
@@ -86,9 +88,13 @@ export function hasProperties(object: unknown, properties: string[]) {
         break;
       }
     }
-    if(missing) missingProperties.push(property);
-  })
-  return missingProperties;
+    if(missing && returnMissing) missingProperties.push(property);
+    else if(missing) return false;
+  }
+  if(returnMissing) {
+    return missingProperties;
+  }
+  return true;
 }
 
 
