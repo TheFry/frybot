@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
-import { enqueue, dequeue, Message, EnqueueResponse } from '../../src/helpers/message_queue';
+import { enqueue, dequeue, EnqueueResponse } from '../../src/helpers/message_queue';
 import { newClient } from '../../src/helpers/redis';
 import { setTimeout } from 'timers';
 import { setTimeout as setTimeoutPromise } from 'timers/promises'
 import { Redis } from 'ioredis';
+import { hasProperties } from '../../src/helpers/common';
 
 const messageCases = [1, 3, 5, 10]
 const queueKey = 'test_queue'
@@ -19,29 +20,31 @@ describe('Message Queue Tests', () => {
   });
   
   it.each(messageCases)('enqueues %i messages at a time', async count => {
-    let messages: Message[] = [];
+    const messages: unknown[] = [];
     for(let i = 0; i < count; i++) {
       messages.push({ name: `test ${i}`, id: i });
     }
-    let res = await enqueue(queueKey, messages);
+    const res = await enqueue(queueKey, messages);
     res.forEach(response => {
+      expect(hasProperties(response.message, ['id'])).toBe(true)
+      const message = response.message as { [id: string]: number }
       expect(response.error).toBeUndefined();
-      expect(response.message).toEqual(messages[response.message.id]);
+      expect(message).toEqual(messages[message.id]);
       expect(response.status).toBeDefined;
       expect(response.status?.jsonSet).toBe('OK');
-      expect(response.status?.listPush).toBe(response.message.id + 1);
+      expect(response.status?.listPush).toBe(message.id + 1);
     })
   })
 
 
   it.each(messageCases)('dequeues %i messages 1 at a time', async count => {
-    let messages: Message[] = [];
+    const messages: unknown[] = [];
     for(let i = 0; i < count; i++) {
       messages.push({ name: `test ${i}`, id: i });
     }
-    let enqs = await enqueue(queueKey, messages);
-    for(let enq of enqs) {
-      let deq = (await dequeue(queueKey, 1))[0];
+    const enqs = await enqueue(queueKey, messages);
+    for(const enq of enqs) {
+      const deq = (await dequeue(queueKey, 1))[0];
       expect(enq.error).toBeUndefined();
       expect(deq.error).toBeUndefined();
       expect(deq.message).toEqual(enq.message);
@@ -49,49 +52,49 @@ describe('Message Queue Tests', () => {
   })
 
   it.each(messageCases)('dequeues %i messages 3 at a time with no timeout', async count => {
-    let messages: Message[] = [];
+    const messages: unknown[] = [];
     for(let i = 0; i < count; i++) {
       messages.push({ name: `test ${i}`, id: i });
     }
-    let enqs = await enqueue(queueKey, messages);
+    const enqs = await enqueue(queueKey, messages);
 
-    while(true) {
-      let deqs = await dequeue(queueKey, 3);
+    let deqs = await dequeue(queueKey, 3);
+    while(deqs.length > 0) {
       if(deqs.length == 0) break;
-      for(let deq of deqs) {
-        let expected = enqs.splice(0, 1)[0];
+      for(const deq of deqs) {
+        const expected = enqs.splice(0, 1)[0];
         expect(expected).toBeDefined();
         expect(deq.error).toBeUndefined();
         expect(deq.message).toEqual(expected?.message);
       }
+      deqs = await dequeue(queueKey, 3)
     }
     expect(enqs.length).toBe(0);
   })
 
   it.each(messageCases)('dequeues %i messages 3 at a time with 3s timeout', async count => {
-    let messages: Message[] = [];
+    const messages: unknown[] = [];
     for(let i = 0; i < count; i++) {
       messages.push({ name: `test ${i}`, id: i });
     }
 
-    let enqs = await enqueue(queueKey, messages);
-    
-    while(true) {
-      let deqs = await dequeue(queueKey, 3, 3);
-      if(deqs.length == 0) break;
-      for(let deq of deqs) {
-        let expected = enqs.splice(0, 1)[0];
+    const enqs = await enqueue(queueKey, messages);
+    let deqs = await dequeue(queueKey, 3, 3);
+    while(deqs.length > 0) {
+      for(const deq of deqs) {
+        const expected = enqs.splice(0, 1)[0];
         expect(expected).toBeDefined();
         expect(deq.error).toBeUndefined();
         expect(deq.message).toEqual(expected?.message);
       }
       if(enqs.length == 0) break;
+      deqs = await dequeue(queueKey, 3, 3);
     }
     expect(enqs.length).toBe(0);
   })
 
   it.each(messageCases)('blocks for new messages and then dequeues %i fresh messages', async count => {
-    let messages: Message[] = [];
+    const messages: unknown[] = [];
     let enqs: EnqueueResponse[] = [];
     for(let i = 0; i < count; i++) {
       messages.push({ name: `test ${i}`, id: i });
@@ -101,10 +104,10 @@ describe('Message Queue Tests', () => {
       enqs = await enqueue(queueKey, messages);
     }, 2000);
 
-    let deqs = await dequeue(queueKey, count, 5);
+    const deqs = await dequeue(queueKey, count, 5);
     expect(deqs.length).toBe(count);
-    for(let deq of deqs) {
-      let expected = enqs.splice(0, 1)[0];
+    for(const deq of deqs) {
+      const expected = enqs.splice(0, 1)[0];
       expect(expected).toBeDefined();
       expect(deq.error).toBeUndefined();
       expect(deq.message).toEqual(expected?.message);
@@ -112,7 +115,7 @@ describe('Message Queue Tests', () => {
   }, 10000)
 
   it.each(messageCases)('blocks for new messages and times out with no results', async count => {
-    let messages: Message[] = [];
+    const messages: unknown[] = [];
     for(let i = 0; i < count; i++) {
       messages.push({ name: `test ${i}`, id: i });
     }

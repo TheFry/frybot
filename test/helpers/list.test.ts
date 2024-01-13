@@ -3,7 +3,7 @@ import { List } from '../../src/helpers/list';
 import { setTimeout } from 'timers/promises';
 
 
-function loadList(num: number, list: List<Number>, func: 'lpush' | 'rpush' = 'lpush') {
+function loadList(num: number, list: List<number>, func: 'lpush' | 'rpush' = 'lpush') {
   for(let i = 0; i < num; i++) {
     list[func](i);
   } 
@@ -24,7 +24,7 @@ const asyncCases = [
 
 
 describe('List Tests', () => {
-  let list: List<Number> = new List();
+  let list: List<number> = new List();
 
   beforeEach(() => { 
     list = new List();
@@ -78,9 +78,9 @@ describe('List Tests', () => {
   })
 
   it.each(asyncCases)('brpop: delay - $delay | timeout - $timeout', async ({ delay, timeout, expected }) => {
-    let ac = new AbortController();
+    const ac = new AbortController();
     let start = 0, end = 0;
-    let actual = await new Promise((resolve) => {
+    const actual = await new Promise((resolve) => {
       list.brpop(timeout)
         .then(val => {
           end = Date.now();
@@ -93,7 +93,7 @@ describe('List Tests', () => {
         .catch(err => { if(err.code !== 'ABORT_ERR') throw err })
     })
 
-    let elapsed = Math.floor((end - start) / 1000);
+    const elapsed = Math.floor((end - start) / 1000);
     if(!timeout || timeout > delay) {
       expect(actual).toBe(expected);
       expect(elapsed).toBe(delay);
@@ -105,8 +105,8 @@ describe('List Tests', () => {
 
   it('cancels brpop with a timer by calling list.abortBlocks', async () => {
     let start = 0, end = 0;
-    let timeout = 10;
-    let actual = await new Promise((resolve) => {
+    const timeout = 10;
+    const actual = await new Promise((resolve) => {
       start = Date.now();
       list.brpop(timeout)
         .then(val => {
@@ -116,14 +116,14 @@ describe('List Tests', () => {
       list.abortBlocks();
     })
 
-    let elapsed = Math.floor((end - start) / 1000);
+    const elapsed = Math.floor((end - start) / 1000);
     expect(actual).toBe(null);
     expect(elapsed).toBe(0);
   })
 
   it('cancels brpop without a timer by calling list.abortBlocks', async () => {
     let start = 0, end = 0;
-    let actual = await new Promise((resolve) => {
+    const actual = await new Promise((resolve) => {
       start = Date.now();
       list.brpop()
         .then(val => {
@@ -133,7 +133,7 @@ describe('List Tests', () => {
       list.abortBlocks();
     })
 
-    let elapsed = Math.floor((end - start) / 1000);
+    const elapsed = Math.floor((end - start) / 1000);
     expect(actual).toBe(null);
     expect(elapsed).toBe(0);
   })

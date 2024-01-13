@@ -306,17 +306,17 @@ describe('Youtube Helper Tests', () => {
   })
 
   it.each(playlistCases)('convert a playlist id $id to YTSearchResult[]', async ({id, videos}) => {
-    let results = await yt.playlistToVideos(id, YT_TOKEN);
+    const results = await yt.playlistToVideos(id, YT_TOKEN);
     expect(results).toEqual(videos);
   })
 
   it.each(listCases)('return YTSearchResult[] of a list of $type ids', async ({ids, list, type}) => {
-    let results = await yt.list(ids, type as 'video' | 'playlist', YT_TOKEN);
+    const results = await yt.list(ids, type as 'video' | 'playlist', YT_TOKEN);
     expect(results).toEqual(list);
   })
 
   it.each(downloadCases)('download/stream id $id and return read stream', async ({ id, path }) => {
-    let stream = await yt.download(id, path);
+    const stream = await yt.download(id, path);
     expect(stream.readable).toBe(true);
     if(path) {
       accessSync(path);
