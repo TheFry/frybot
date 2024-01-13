@@ -88,17 +88,17 @@ export class VoiceBot {
 
   
   static async init(options: InitOptions): Promise<VoiceBot> {
-    let channel = await client.channels.fetch(options.channelId);
+    const channel = await client.channels.fetch(options.channelId);
     if(!channel) throw Error(`VoiceBotInitError - Channel ${options.channelId}. The bot might not be connected to guild ${options.guildId}`);
     if(!channel.isVoiceBased()) throw Error(`VoiceBotInitError - Channel ${options.channelId} is not a voice channel!`);
-    let audioResources = await VoiceBot.connect({
+    const audioResources = await VoiceBot.connect({
       channelId: options.channelId, 
       guildId: options.guildId, 
       voiceAdapter: options.voiceAdapter,
       channelName: channel.name
     }) as AudioResources;
     
-    let bot = new VoiceBot({
+    const bot = new VoiceBot({
       channelId: options.channelId,
       channelName: channel.name,
       guildId: options.guildId,
@@ -125,14 +125,14 @@ export class VoiceBot {
     }
 
     // init audio player
-    let player = createAudioPlayer({
+    const player = createAudioPlayer({
       behaviors: {
         noSubscriber: NoSubscriberBehavior.Pause,
       },
     });
 
     await entersState(player, AudioPlayerStatus.Idle, 5000);
-    let audioResources = { player: player };
+    const audioResources = { player: player };
     connection.subscribe(player);
     logConsole({msg: `Guild ${options.guildId} - audio player initialized in idle state to channel ${options.channelId} | ${options.channelName}`});
     return audioResources;
@@ -184,16 +184,16 @@ export class VoiceBot {
       return;
     }
 
-    let promises: Promise<any> [] = [];
+    const promises: Promise<unknown> [] = [];
     promises.push(getSong(this.channelId, skip ? -1 : this.idleTimeout));
     promises.push(once(this.cancelWatch, CANCEL_WATCH_EVENT));
-    let event = await Promise.race(promises);
+    const event = await Promise.race(promises);
     if(event === CANCEL_WATCH_EVENT) {
       logConsole({ msg: `playNext cancel event on channel ${this.channelId}`});
       return;
     }
 
-    let entry = event as PlaylistEntry;
+    const entry = event as PlaylistEntry;
     if(!entry) {
       logConsole({ msg: `Nothing in the queue for ${this.channelId}. Cleaning up` });
       this.eventList.lpush({ type: 'stop', channelId: this.channelId });
@@ -229,7 +229,7 @@ export class VoiceBot {
   }
 
 
-  async stop(interactionId?: Snowflake) {
+  async stop() {
     this.readyForEvents = false;
     this.cancelWatch.emit(CANCEL_WATCH_EVENT);
     this.cleanupAudio();
@@ -241,8 +241,8 @@ export class VoiceBot {
   }
 
   
-  async pause(unpause = false, interactionId?: Snowflake) {
-    let currentState = this.audioResources.player.state.status;
+  async pause(unpause = false) {
+    const currentState = this.audioResources.player.state.status;
     let status;
     if(unpause && currentState == AudioPlayerStatus.Paused) {
       status = this.audioResources.player.unpause();
@@ -251,10 +251,10 @@ export class VoiceBot {
     }
     
     if(!status) { 
-      let msg = `Error ${unpause ? 'unpausing' : 'pausing'} the queue`
+      const msg = `Error ${unpause ? 'unpausing' : 'pausing'} the queue`
       logConsole({ msg: `Channel ${this.channelId} - ${msg}`, type: LogType.Error }) 
     } else {
-      let msg = `Queue is ${unpause ? 'unpaused' : 'paused'}`
+      const msg = `Queue is ${unpause ? 'unpaused' : 'paused'}`
       logConsole({ msg: `Channel ${this.channelId} - ${msg}`, type: LogType.Debug }) 
     }
   }
@@ -270,7 +270,7 @@ export class VoiceBot {
     delete this.audioResources.discordResource;
     
     try {
-      let channel = getVoiceConnection(this.guildId);
+      const channel = getVoiceConnection(this.guildId);
       if(channel) channel.destroy();
       if(fs.existsSync(`./${this.guildId}`)) fs.rmSync(`./${this.guildId}`);
     } catch(err) {
@@ -281,7 +281,7 @@ export class VoiceBot {
 
   async processEvents(): Promise<void> {
     while(this.readyForEvents) {
-      let event = await this.eventList.brpop();
+      const event = await this.eventList.brpop();
       if(!event) continue;
       
       switch(event.type) {
@@ -293,10 +293,10 @@ export class VoiceBot {
           await this.playNext(true);
           break;
         case 'pause':
-          await this.pause(false, event.interactionId);
+          await this.pause(false);
           break;
         case 'unpause':
-          await this.pause(true, event.interactionId);
+          await this.pause(true);
           break;
       }
     }
