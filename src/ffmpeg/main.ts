@@ -1,12 +1,11 @@
 import ffmpeg from 'fluent-ffmpeg';
-import { INTERACTION_QUEUE_KEY, CLIP_QUEUE_KEY, ClipJob } from "../helpers/common";
+import { INTERACTION_QUEUE_KEY, CLIP_QUEUE_KEY, ClipJob, MEDIA_DIR } from "../helpers/common";
 import { dequeue, enqueue } from "../helpers/message_queue";
 import * as yt from '../helpers/youtube';
 import { DiscordResponse } from "../helpers/interactions";
 import { nanoid } from "nanoid/non-secure";
 import { rmSync } from "fs";
 import { newClient } from "../helpers/redis";
-import { MEDIA_DIR } from "../helpers/common";
 import { LogType, logConsole } from "../helpers/logger";
 
 async function clip(job: ClipJob) {
@@ -58,12 +57,12 @@ async function main() {
       continue;
     }
 
-    if(!res ||
-      !res.message ||
-      !res.message.duration || 
-      !res.message.interactionId || 
-      !res.message.startTime || 
-      !res.message.video) 
+    const message = res.message as ClipJob;
+    if(!message ||
+      !message.duration || 
+      !message.interactionId || 
+      !message.startTime || 
+      !message.video) 
     {
       logConsole({ msg: `Error dequeueing from interaction queue - invalid message object\n${res}`, type: LogType.Error });
       continue;
