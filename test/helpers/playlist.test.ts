@@ -247,12 +247,13 @@ describe('Test playlist helper functions', () => {
 
   it.each(testCaseCounts)('should add %i songs to the playlist and retrieve them (NaN = all)', async (count) => {
     count = count || testVideos.length;
-    let responses = [];
+    const responses = [];
     await addSong(CHANNEL_ID, testVideos.slice(0, count));
     
-    let song;
-    while(song = await getSong(CHANNEL_ID, -1)) {
-      responses.push(song)
+    let song = await getSong(CHANNEL_ID, -1);
+    while(song) {
+      responses.push(song);
+      song = await getSong(CHANNEL_ID, -1);
     }
 
     expect(responses.length).toBe(count);
@@ -262,15 +263,16 @@ describe('Test playlist helper functions', () => {
 
   it.each(testCaseCounts)('should block and then retrieve %i songs when they are added to the playlist', async (count) => {
     count = count || testVideos.length;
-    let responses = [];
+    const responses = [];
 
     setTimeout(async () => {
       await addSong(CHANNEL_ID, testVideos.slice(0, count));
     }, 2000);
 
-    let song;
-    while(song = await getSong(CHANNEL_ID, 4)) { 
-      responses.push(song); 
+    let song = await getSong(CHANNEL_ID, 4);
+    while(song) {
+      responses.push(song);
+      song = await getSong(CHANNEL_ID, 4);
     }
 
     expect(responses.length).toBe(count);
@@ -278,13 +280,13 @@ describe('Test playlist helper functions', () => {
     expect(await getSong(CHANNEL_ID, -1)).toBeUndefined();
   }, 10000);
 
-  it.each(testCaseCounts)('should block and timeout, returning nothing', async (count) => {
-    count = count || testVideos.length;
-    let responses = [];
+  it.each(testCaseCounts)('should block and timeout, returning nothing', async () => {
+    const responses = [];
 
-    let song;
-    while(song = await getSong(CHANNEL_ID, 4)) { 
-      responses.push(song); 
+    let song = await getSong(CHANNEL_ID, 4);
+    while(song) {
+      responses.push(song);
+      song = await getSong(CHANNEL_ID, 4);
     }
 
     expect(responses.length).toBe(0);

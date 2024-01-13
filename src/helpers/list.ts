@@ -2,6 +2,7 @@ import { E_CANCELED, Mutex } from "async-mutex";
 import { EventEmitter, once } from "events";
 import { setTimeout } from "timers";
 import { LogType, logConsole } from "./logger";
+import { hasProperties } from "./common";
 
 const PUSH_EVENT = 'push';
 const CANCEL_EVENT = 'cancel';
@@ -37,7 +38,7 @@ export class List<T> {
       this.newHead(data);
       return;
     }
-    let node = new Node(this.head, null, data);
+    const node = new Node(this.head, null, data);
     this.head.pnode = node;
     this.head = node;
     this.len++;
@@ -47,7 +48,7 @@ export class List<T> {
 
   lpop(): T | null {
     if(!this.head) return null;
-    let data = this.head.data;
+    const data = this.head.data;
     if(this.head.nnode) this.head.nnode.pnode = null;
     this.head = this.head.nnode;
     this.tail = this.head ? this.tail : null;
@@ -61,7 +62,7 @@ export class List<T> {
       this.newHead(data);
       return;
     }
-    let node = new Node(null, this.tail, data);
+    const node = new Node(null, this.tail, data);
     this.tail.nnode = node;
     this.tail = node;
     this.len++;
@@ -71,7 +72,7 @@ export class List<T> {
 
   rpop(): T | null {
     if(!this.tail) return null;
-    let data = this.tail.data;
+    const data = this.tail.data;
     if(this.tail.pnode) this.tail.pnode.nnode = null;
     this.tail = this.tail.pnode;
     this.head = this.tail ? this.head : null;
@@ -91,7 +92,7 @@ export class List<T> {
       }
     }
 
-    let data = this.rpop();
+    const data = this.rpop();
     if(data || timeout === 0) {
       this.#blockMutex.release();
       return data;
@@ -102,11 +103,14 @@ export class List<T> {
     let event;
     let timerId;
     try {
-      let listener = once(this.#listEvents, PUSH_EVENT, { signal: this.#ac.signal });
+      const listener = once(this.#listEvents, PUSH_EVENT, { signal: this.#ac.signal });
       if(timeout) timerId = setTimeout(() => this.#ac.abort(), timeout);
       event = (await listener)[0];
-    } catch(err: any) {
-      if(err.code !== 'ABORT_ERR') throw err;
+    } catch(err) {
+      if(hasProperties(err, 'code')) {
+        const checked = err as { [code: string]: unknown }
+        if(checked.code !== 'ABORT_ERR') throw err
+      }
       event = CANCEL_EVENT;
     }
     if(timerId) clearTimeout(timerId);

@@ -22,11 +22,11 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<[
   const modalId = await randomBytes(16).toString('hex');
   const linksId = await randomBytes(16).toString('hex');
 
-  let modal = new ModalBuilder()
+  const modal = new ModalBuilder()
     .setTitle('Play Multiple Songs')
     .setCustomId(modalId);
   
-  let linkInput = new TextInputBuilder()
+  const linkInput = new TextInputBuilder()
     .setLabel('Youtube Links (One per line)')
     .setStyle(TextInputStyle.Paragraph)
     .setRequired(true)
@@ -36,7 +36,7 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<[
     new ActionRowBuilder<TextInputBuilder>().addComponents(linkInput)
   )
   
-  let modalFilter = (interaction: ModalSubmitInteraction) => interaction.customId === modalId; 
+  const modalFilter = (interaction: ModalSubmitInteraction) => interaction.customId === modalId; 
   let submission: ModalMessageModalSubmitInteraction;
   await interaction.showModal(modal);
   try {
@@ -47,12 +47,14 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<[
   }
   
   await submission.reply('Verifying Links...');
-  let badLinks: Array<string> = [];
-  let links = submission.fields.getTextInputValue(linksId).split('\n').filter(link => {
+  const badLinks: Array<string> = [];
+  const links = submission.fields.getTextInputValue(linksId).split('\n').filter(link => {
     let url: URL | null = null;
     try {
       url = new URL(link);
-    } catch { };
+    } catch { 
+      // URL is verified below
+    }
 
     if(url && url.hostname === 'www.youtube.com' && url.pathname === '/watch' && url.searchParams.get('v')) return true;
     badLinks.push(link);
@@ -82,14 +84,14 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
     return;
   }
 
-  let ids = (await getModalData(interaction));
+  const ids = (await getModalData(interaction));
   if(ids[0].length === 0) return;
 
   // Throw the guildId in redis with the channel id as a key
   // Voicebots use this rather than querying discord for it
   await redisClient?.setnx(`discord:channel:${channelId}:guild-id`, member.guild.id);
   await redisClient?.checkIfWatched(WATCHED_CHANNELS_KEY, FREE_CHANNELS_KEY, channelId);
-  let videos = (await yt.list(ids[0], 'video', YT_TOKEN)).map(vid => ({ youtubeVideoId: vid.id, youtubeVideoTitle: vid.name, interactionId: interaction.id }));
+  const videos = (await yt.list(ids[0], 'video', YT_TOKEN)).map(vid => ({ youtubeVideoId: vid.id, youtubeVideoTitle: vid.name, interactionId: interaction.id }));
   
   try {
     await addSong(channelId, videos);

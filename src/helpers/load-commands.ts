@@ -2,6 +2,10 @@ import path from 'path';
 import fs from 'fs';
 import { Client, REST, Routes  } from 'discord.js';
 import { LogType, logConsole } from './logger';
+import { hasProperties } from './common';
+
+// This workaround is suggested by discordjs docs for typescript support
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 class DiscordClient extends Client { commands: any }
 
 const DEPLOY = process.env['DEPLOY'] ? true : false;
@@ -19,7 +23,7 @@ export default async function load(client: DiscordClient, token: string, clientI
 
   for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
-    const command = require(filePath);
+    const command = await import(filePath);
     commands.push(command.data.toJSON());
     client.commands.set(command.data.name, command);
   }
@@ -33,7 +37,11 @@ export default async function load(client: DiscordClient, token: string, clientI
   }
 
   if(DEPLOY) {
-    const data: any = await rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: commands })
-    logConsole({ msg: `Successfully registered ${data.length} application commands.` })
+    const data = await rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: commands })
+    let checked;
+    if(hasProperties(data, ['length'])) {
+      checked = data as { [length: string]: number }
+      logConsole({ msg: `Successfully registered ${checked.length} application commands.` })
+    }
   }
 }

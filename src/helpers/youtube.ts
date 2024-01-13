@@ -1,9 +1,10 @@
 import axios from 'axios';
 import ytdl from 'ytdl-core';
-import { ReadStream, appendFileSync, createReadStream } from 'fs';
+import { ReadStream, appendFileSync } from 'fs';
 import { LogType, logConsole } from './logger';
 import { FileHandle, open } from 'fs/promises';
 import { Readable } from 'stream';
+import { hasProperties } from './common';
 
 const SEARCH_ENDPOINT = 'https://www.googleapis.com/youtube/v3/search';
 const VIDEO_ENDPOINT = 'https://www.googleapis.com/youtube/v3/videos';
@@ -17,22 +18,138 @@ export interface YTSearchResult {
   type: 'video' | 'playlist';
 }
 
+interface Thumbnails {
+  [key: string]: {
+    url: string;
+    width: number;
+    height: number;
+  };
+}
 
-async function request(url: string, params: any): Promise<any> {
+interface PageInfo {
+  totalResults: number;
+  resultsPerPage: number;
+}
+
+interface SearchResource {
+  kind: 'youtube#searchResult';
+  etag: string;
+  id: {
+    kind: string;
+    videoId?: string;
+    channelId?: string;
+    playlistId?: string;
+  };
+  snippet: {
+    publishedAt: Date;
+    channelId: string;
+    title: string;
+    description: string;
+    thumbnails: Thumbnails;
+    channelTitle: string;
+    liveBroadcastContent: string;
+  };
+}
+
+interface VideoResource {
+  kind: 'youtube#video';
+  etag: string;
+  id: string;
+  snippet: {
+    publishedAt: Date;
+    channelId: string;
+    title: string;
+    description: string;
+    thumbnails: Thumbnails;
+    channelTitle: string;
+    tags: string[];
+    categoryId: string;
+    liveBroadcastContent: string;
+    defaultLanguage: string;
+    localized: {
+      title: string;
+      description: string;
+    }
+    defaultAudioLanguage: string;
+  };
+}
+
+interface PlaylistItemResource {
+  kind: 'youtube#playlistItem';
+  etag: string;
+  id: string;
+  snippet: {
+    publishedAt: Date;
+    channelId: string;
+    title: string;
+    description: string;
+    thumbnails: Thumbnails;
+    channelTitle: string;
+    videoOwnerChannelTitle: string;
+    videoOwnerChannelId: string;
+    playlistId: string;
+    position: number;
+    resourceId: {
+      kind: string;
+      videoId: string;
+    };
+  };
+  contentDetails: {
+    videoId: string;
+    startAt: string;
+    endAt: string;
+    note: string;
+    videoPublishedAt: Date;
+  };
+  status: {
+    privacyStatus: string;
+  };
+}
+
+interface SearchListResponse {
+  kind: 'youtube#searchListResponse';
+  etag: string;
+  nextPageToken: string;
+  prevPageToken: string;
+  regionCode: string;
+  pageInfo: PageInfo
+  items: SearchResource[];
+}
+
+interface VideoListResponse {
+  kind: 'youtube#videoListResponse';
+  etag: string;
+  nextPageToken: string;
+  prevPageToken: string;
+  pageInfo: PageInfo
+  items: VideoResource[];
+}
+
+interface PlaylistItemListResponse {
+  kind: 'youtube#playlistItemListResponse';
+  etag: string;
+  nextPageToken: string;
+  prevPageToken: string;
+  pageInfo: PageInfo;
+  items: PlaylistItemResource[];
+}
+
+async function request(url: string, params: unknown): Promise<SearchListResponse | VideoListResponse | PlaylistItemListResponse | void> {
   let res;
   try {
     res = await axios.get(url, {
       headers: { "Content-Type": "application/json" },
       params
     });
-  } catch(err: any) {
-    if(err.response) {
-      logConsole({ msg: `${JSON.stringify(err.response.data)}`, type: LogType.Error });
-      logConsole({ msg: err.response.status, type: LogType.Error });
+  } catch(err) {
+    if(hasProperties(err, ['response.data', 'response.status'])) {
+      const checked = err as { response: { data: unknown, status: unknown } }
+      logConsole({ msg: `${JSON.stringify(checked.response.data)}`, type: LogType.Error });
+      logConsole({ msg: `${checked.response.status}`, type: LogType.Error });
     } else {
-      logConsole({ msg: err, type: LogType.Error });
+      logConsole({ msg: `${err}`, type: LogType.Error });
     }
-    return { data: { items: [] } };
+    return;
   }
   return res.data;
 }
@@ -41,8 +158,8 @@ async function request(url: string, params: any): Promise<any> {
 export async function search(query: string, count: number, type: 'video' | 'playlist', key: string): Promise<YTSearchResult[]> {
   const results: YTSearchResult[] = [];
   count = count > MAX_RESULTS ? MAX_RESULTS : count;
-  let maxResults = count <= MAX_PER_PAGE ? count : MAX_PER_PAGE;
-  let numPages = Math.ceil(count / MAX_PER_PAGE);
+  const maxResults = count <= MAX_PER_PAGE ? count : MAX_PER_PAGE;
+  const numPages = Math.ceil(count / MAX_PER_PAGE);
 
   for(let i = 0; i < numPages; i++) {
     let data = await(request(SEARCH_ENDPOINT, {
@@ -53,10 +170,13 @@ export async function search(query: string, count: number, type: 'video' | 'play
       maxResults: maxResults,
     }));
 
-    for(let item of data.items) {
+    if(data) data = data as SearchListResponse;
+    else return [];
+
+    for(const item of data.items) {
       results.push({
         name: item.snippet.title,
-        id: item.id.kind === 'youtube#video' ? item.id.videoId : item.id.playlistId,
+        id: item.id.kind === 'youtube#video' ? item.id.videoId as string : item.id.playlistId as string,
         type: item.id.kind === 'youtube#video' ? 'video' : 'playlist'
       })
       
@@ -70,7 +190,7 @@ export async function search(query: string, count: number, type: 'video' | 'play
 
 
 export async function list(ids: string[], type: 'video' | 'playlist', key: string): Promise<YTSearchResult[]> {
-  let results: YTSearchResult[] = [];
+  const results: YTSearchResult[] = [];
   const maxIds = 50;
   const endpoint = type === 'video' ? VIDEO_ENDPOINT : PLAYLIST_ENDPOINT;
   
@@ -82,7 +202,10 @@ export async function list(ids: string[], type: 'video' | 'playlist', key: strin
       part: 'snippet',
     }));
 
-    for(let item of data.items)  {
+    if(data) data = data as VideoListResponse | PlaylistItemListResponse;
+    else return [];
+
+    for(const item of data.items)  {
       results.push({
         name: item.snippet.title,
         id: item.id,
@@ -95,7 +218,7 @@ export async function list(ids: string[], type: 'video' | 'playlist', key: strin
 
 
 export async function playlistToVideos(playlistId: string, key: string): Promise<YTSearchResult[]> {
-  let results: YTSearchResult[] = [];
+  const results: YTSearchResult[] = [];
   let nextPage = true;
   let data;
 
@@ -107,7 +230,10 @@ export async function playlistToVideos(playlistId: string, key: string): Promise
       pageToken: data ? data.nextPageToken : undefined 
     }));
 
-    for(let item of data.items) { 
+    if(data) data = data as PlaylistItemListResponse;
+    else return [];
+    
+    for(const item of data.items) { 
       results.push({ 
         name: item.snippet.title,
         id: item.snippet.resourceId.videoId,
@@ -121,7 +247,7 @@ export async function playlistToVideos(playlistId: string, key: string): Promise
 
 
 export async function download(songId: string, path?: string): Promise<Readable> {
-  let download = ytdl(songId, { filter: 'audioonly' });
+  const download = ytdl(songId, { filter: 'audioonly' });
   if(!path) return download as ReadStream;
   let f: FileHandle;
 

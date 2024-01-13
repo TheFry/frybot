@@ -1,7 +1,7 @@
 import Redis, { Result, Callback } from "ioredis";
 import { readFileSync } from "fs";
 import { Snowflake } from "discord.js";
-import { LogOptions, LogType, logConsole } from "./logger";
+import {  LogType, logConsole } from "./logger";
 
 const REDIS_URL = process.env['REDIS_URL'] || 'redis://localhost:6379';
 const REDIS_SCRIPT_DIR = './redis_scripts';
@@ -29,7 +29,7 @@ declare module "ioredis" {
 export let redisClient: Redis | null = null;
 
 export async function newClient(url: string = REDIS_URL) {
-  let newClient = new Redis(url)
+  const newClient = new Redis(url)
 
   newClient.defineCommand('enqueue', {
     numberOfKeys: 2,
