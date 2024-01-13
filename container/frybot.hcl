@@ -7,7 +7,7 @@ job "frybot" {
 
     network {
       dns {
-        servers = ["192.168.1.42"]
+        servers = [""]
       }
     }
 
@@ -32,7 +32,7 @@ job "frybot" {
 
       resources {
         cpu = "500"
-        memory = "512"
+        memory = "128"
       }
 
       vault {
@@ -72,7 +72,7 @@ job "frybot" {
 
       resources {
         cpu = "500"
-        memory = "512"
+        memory = "128"
       }
 
       vault {
@@ -104,7 +104,7 @@ job "frybot" {
 
       resources {
         cpu = "500"
-        memory = "512"
+        memory = "128"
       }
 
       vault {
@@ -136,7 +136,7 @@ job "frybot" {
 
       resources {
         cpu = "500"
-        memory = "512"
+        memory = "128"
       }
 
       vault {
