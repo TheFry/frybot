@@ -1,8 +1,6 @@
 import { nanoid } from 'nanoid/non-secure';
 import { redisClient } from './redis';
 
-export interface Message { [key: string]: any }
-
 export interface EnqueueResponseStatus {
   jsonSet: string | object;
   listPush: number | object;
@@ -11,39 +9,39 @@ export interface EnqueueResponseStatus {
 export interface EnqueueResponse {
   status?: EnqueueResponseStatus;
   entryKey: string;
-  message: Message;
-  error?: unknown;
+  message: unknown;
+  error?: string;
 }
 
 export interface DequeueResponse {
   uuid?: string;
-  message?: Message;
-  error?: unknown;
+  message?: unknown;
+  error?: string;
 }
 
 export interface EnqueueOptions {
   queueKey: string;
   entryKey: string;
   uuid: string;
-  message: Message;
+  message: unknown;
   inFront?: boolean;
 }
 
 
-export async function enqueue(queueKey: string, messages: Message[], inFront = false) {
-  let responses: Array<EnqueueResponse> = [];
-  for(let message of messages) {
-    let uuid = nanoid();
-    let entryKey = `${queueKey}-entry:${uuid}`;
+export async function enqueue(queueKey: string, messages: unknown[], inFront = false) {
+  const responses: Array<EnqueueResponse> = [];
+  for(const message of messages) {
+    const uuid = nanoid();
+    const entryKey = `${queueKey}-entry:${uuid}`;
     let status;
     try {
       status = await redisClient?.enqueue(queueKey, entryKey, uuid, JSON.stringify(message), inFront.toString());
     } catch(err) {
-      responses.push({ entryKey, message, error: err });
+      responses.push({ entryKey, message, error: `${err}` });
       continue;
     }
     if(!status) {
-      responses.push({ entryKey, message, error: new Error(`Enqueue Error - no response from server for ${entryKey}`) })
+      responses.push({ entryKey, message, error: `Enqueue Error - no response from server for ${entryKey}` })
     } else {
       responses.push({ entryKey,  message, status: { jsonSet: status[0], listPush: status[1] } });
     }
@@ -53,7 +51,7 @@ export async function enqueue(queueKey: string, messages: Message[], inFront = f
 
 
 export async function dequeue(queueKey: string, count: number, timeout?: number): Promise<DequeueResponse[]> {
-  let responses: DequeueResponse [] = [];
+  const responses: DequeueResponse [] = [];
   
   if(count < 0) {
     try {
@@ -69,42 +67,56 @@ export async function dequeue(queueKey: string, count: number, timeout?: number)
       if(timeout === undefined || timeout < 0) {
         uuid = await redisClient?.rpop(queueKey) as string | null;
       } else {
-        let tempClient = await redisClient?.duplicate(); 
-        let res = await tempClient?.brpop(queueKey, timeout);
+        const tempClient = await redisClient?.duplicate(); 
+        const res = await tempClient?.brpop(queueKey, timeout);
         tempClient?.disconnect();
         if(res) uuid = res[1];
       }
     } catch(err) {
-      responses.push({ error: err });
+      responses.push({ error: `${err}` });
       count--;
       continue;
     }
   
     if(!uuid) {
       break;
-    };
+    }
   
-    let entryKey = `${queueKey}-entry:${uuid}`;
-    let res = []; 
+    const entryKey = `${queueKey}-entry:${uuid}`;
+    let res; 
     try {
       res = await redisClient?.multi()
         .call('JSON.GET', entryKey)
         .del(entryKey)
-        .exec() as any
+        .exec()
     } catch(err) {
       responses.push({
         uuid: uuid,
-        error: err
+        error: `${err}`
       });
       count--;
       continue;
     }
-  
-    responses.push({
-      uuid: uuid,
-      message: JSON.parse(res[0][1]) as Message,
-      error: res[1] as number <= 0 ? new Error(`Error deleting key ${entryKey}. It doesn't exist.`) : undefined
-    });
+
+    if(res) {
+      const [jsonErr, jsonRes] = res[0];
+      const delErr = res[1][0];
+      let errorString = '';
+
+      if(jsonErr) errorString += `dequeue JSON.GET error for entryKey ${entryKey} - ${jsonErr}\n`;
+      if(delErr) errorString += `dequeue del error for entryKey ${entryKey} - ${delErr}`;
+
+      responses.push({
+        uuid: uuid,
+        message: JSON.parse(jsonRes as string),
+        error: errorString === '' ? undefined : errorString
+      })
+    } else {
+      responses.push({
+        uuid: uuid,
+        error: 'Dequeue Error - no response from server'
+      })
+    }
     count--;
   }
 

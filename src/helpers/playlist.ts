@@ -3,6 +3,7 @@ import * as queue from './message_queue';
 import { DiscordResponse } from './interactions';
 import { redisClient } from './redis';
 import { LogType, logConsole } from './logger';
+import { hasProperties } from './common';
 
 export interface PlaylistEntry {
   youtubeVideoId: string;
@@ -12,12 +13,12 @@ export interface PlaylistEntry {
 
 
 export async function addSong(channelId: Snowflake, songs: PlaylistEntry[], inFront = false): Promise<Array<DiscordResponse>> {
-  let queueKey = `discord:channel:${channelId}:queue`
-  let responses = await queue.enqueue(queueKey, songs, inFront);
-  let discordResponses: DiscordResponse [] = [];
-  for(let response of responses) {
-    let status = response.status;
-    let entry = response.message as PlaylistEntry;
+  const queueKey = `discord:channel:${channelId}:queue`
+  const responses = await queue.enqueue(queueKey, songs, inFront);
+  const discordResponses: DiscordResponse [] = [];
+  for(const response of responses) {
+    const status = response.status;
+    const entry = response.message as PlaylistEntry;
     if(!status || status.jsonSet !== 'OK' || isNaN(status.listPush as number) || status.listPush as number <= 0) {
       discordResponses.push({ interactionId: entry.interactionId, content: `Error adding ${entry.youtubeVideoTitle} to queue.` });
     }
@@ -27,21 +28,26 @@ export async function addSong(channelId: Snowflake, songs: PlaylistEntry[], inFr
 
 
 export async function getSong(channelId: Snowflake, timeout = 30): Promise<PlaylistEntry | void> {
-  let queueKey = `discord:channel:${channelId}:queue`
-  let response = await queue.dequeue(queueKey, 1, timeout);
+  const queueKey = `discord:channel:${channelId}:queue`
+  const response = await queue.dequeue(queueKey, 1, timeout);
   if(response.length === 0) return;
 
   if(response[0].error) {
-    `Error getting song for channel ${channelId} - ${response[0].error}`;
+    logConsole({ msg: `Error getting song for channel ${channelId} - ${response[0].error}`, type: LogType.Error });
     return;
   }
 
-  if(response[0].message) return response[0].message as PlaylistEntry;
+  const missing = hasProperties(response[0].message, ['youtubeVideoId', 'youtubeVideoTitle', 'interactionId'], true) as string[];
+  if(missing.length == 0) {
+    return response[0].message as PlaylistEntry;
+  } else {
+    logConsole({ msg: `Error getting song for channel ${channelId} - Response is missing props ${missing}` })
+  }
 }
 
 
 export async function getBotId(channelId: Snowflake) {
-  let botIdKey = `discord:channel:${channelId}:bot-id`;
+  const botIdKey = `discord:channel:${channelId}:bot-id`;
 
   try {
     return await redisClient?.get(botIdKey);

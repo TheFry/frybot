@@ -17,6 +17,6 @@ export const interactions: Interactions = {  }
 // Add interaction to the list. Set a timeout for removal of the interaction from list when it is no longer available in discord
 export async function addInteraction(interaction: BaseInteraction) {
   interactions[interaction.id] = interaction;
-  let timeout = interaction.createdTimestamp + INTERACTION_TIMEOUT - Date.now();
+  const timeout = interaction.createdTimestamp + INTERACTION_TIMEOUT - Date.now();
   setTimeout((interactionId: Snowflake) => { delete interactions[interactionId] }, timeout, interaction.id);
 }

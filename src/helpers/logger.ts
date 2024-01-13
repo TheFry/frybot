@@ -33,18 +33,18 @@ export async function logBoth(options: DCLogOptions) {
 
 
 export async function logDiscord(options: DCLogOptions) {
-  let msg = `${ts()} ${options.msg}`;
+  const msg = `${ts()} ${options.msg}`;
   if(options.dcClient && options.dcErrorChannel) {
     let channel;
-    let err;
+    let error;
     try {
       channel = await options.dcClient.channels.fetch(options.dcErrorChannel) as TextChannel; 
     } catch(err) { 
-      err = err;
-    };
+      error = err;
+    }
     
-    if(err || !channel || !channel.isTextBased()) {
-      let msg = `ErROr SEndInG eRrOR MeSsAgE tO DisCoRD ChAnNeL - ${err ? err : options.dcErrorChannel}`;
+    if(error || !channel || !channel.isTextBased()) {
+      const msg = `ErROr SEndInG eRrOR MeSsAgE tO DisCoRD ChAnNeL - ${error ? error : options.dcErrorChannel}`;
       logConsole({msg, type: LogType.Error});
       return;
     }
@@ -52,7 +52,7 @@ export async function logDiscord(options: DCLogOptions) {
     try {
       await channel.send(msg);
     } catch(err) {  
-      let msg = `ErROr SEndInG eRrOR MeSsAgE tO DisCoRD ChAnNeL - ${err}`;
+      const msg = `ErROr SEndInG eRrOR MeSsAgE tO DisCoRD ChAnNeL - ${err}`;
       logConsole({msg, type: LogType.Error});
       return;
     }
@@ -61,8 +61,8 @@ export async function logDiscord(options: DCLogOptions) {
 
 
 export function logConsole(options: LogOptions) {
-  let msg = `${ts()} ${options.msg}`;
-  let logType = options.type || LogType.Debug;
+  const msg = `${ts()} ${options.msg}`;
+  const logType = options.type || LogType.Debug;
   switch(logType) {
     case LogType.Debug:
       if(LOG_LEVEL >= LogType.Debug) console.debug(`\x1b[${DEBUG_COLOR}m%s\x1b[0m`, msg);
