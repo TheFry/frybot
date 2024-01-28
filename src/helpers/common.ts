@@ -19,12 +19,49 @@ export interface ClipJob {
   interactionId: Snowflake;
 }
 
+export interface KoboldJob {
+  channelId: Snowflake;
+  userId: Snowflake;
+  username: string;
+  prompt: string;
+}
+
+export interface GenRequestBody {
+  n: number;
+  max_context_length: number;
+  max_length: number;
+  rep_pen: number;
+  temperature: number;
+  top_p: number;
+  top_k: number;
+  top_a: number;
+  typical: number;
+  tfs: number;
+  rep_pen_range: number;
+  rep_pen_slope: number;
+  sampler_order: number[];
+  memory: string;
+  genkey?: string;
+  min_p: number;
+  dynatemp_range: number;
+  presence_penalty: number;
+  logit_bias: Record<string, unknown>;
+  prompt: string;
+  quiet: boolean;
+  stop_sequence: string[];
+  use_default_badwordsids: boolean;
+}
+
+export const DC_MSG_LIMIT = 2000
 export const FREE_CHANNELS_KEY = 'frybot:free-channels';
 export const WATCHED_CHANNELS_KEY = 'frybot:reserved-channels';
 export const CHANNEL_EVENT_KEY = 'discord:channel-events';
 export const CLIP_QUEUE_KEY =  'frybot:clip-jobs-queue';
 export const INTERACTION_QUEUE_KEY = 'frybot:interaction-queue';
 export const MEDIA_DIR = '/frybot_media';
+export const KOBOLD_ADDR = "http://koboldcpp.service.consul:5001";
+export const GEN_ENDPOINT = `${KOBOLD_ADDR}/api/v1/generate`;
+export const KOBOLD_QUEUE_KEY = 'frybot:kobold-queue'
 
 function usage(missing: string): void {
   logConsole({ msg: `

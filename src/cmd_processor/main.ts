@@ -1,18 +1,19 @@
 import loadCommands from '../helpers/load-commands';
-import { Client, Collection, GatewayIntentBits, Interaction } from 'discord.js';
-import { checkVars, DiscordClient, INTERACTION_QUEUE_KEY } from '../helpers/common';
+import { ChannelType, Client, Collection, DMChannel, GatewayIntentBits, Interaction, Message, Partials } from 'discord.js';
+import { checkVars, DiscordClient, INTERACTION_QUEUE_KEY, KOBOLD_QUEUE_KEY, KoboldJob } from '../helpers/common';
 import { addInteraction, DiscordResponse, interactions } from '../helpers/interactions';
 import { newClient as newRedisClient } from '../helpers/redis';
-import { dequeue } from '../helpers/message_queue';
+import { dequeue, enqueue } from '../helpers/message_queue';
 import { rmSync } from 'fs';
 import { LogType, logConsole } from '../helpers/logger';
+import { processChats } from '../chat_bot/chat';
 
 checkVars();
 const DC_TOKEN = process.env['DC_TOKEN'] || '';
 const DC_CLIENT = process.env['DC_CLIENT'] || '';
 const G_ID = process.env['G_ID'] || '';
 
-const client: DiscordClient = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] }) as DiscordClient;
+const client: DiscordClient = new Client({ partials: [Partials.Channel], intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.DirectMessages] }) as DiscordClient;
 
 
 client.login(DC_TOKEN)
@@ -21,14 +22,29 @@ client.login(DC_TOKEN)
     process.exit(1);
   })
 
-
 client.once('ready', async () => {
   logConsole({ msg: 'Client logged in!' });
   await newRedisClient();
   client.commands = new Collection();
+  processChats(client);
   loadCommands(client, DC_TOKEN, DC_CLIENT, '../cmd_processor/commands', G_ID);
   respond();
 });
+
+
+client.on('messageCreate', async (message: Message) => {
+  if(message.channel.type !== ChannelType.DM || message.author.id === client.application?.id) {
+    return;
+  }
+  const channel = message.channel as DMChannel;
+  let job: KoboldJob = {
+    channelId: channel.id,
+    prompt: message.content,
+    userId: message.author.id,
+    username: message.author.displayName  
+  }
+  await enqueue(KOBOLD_QUEUE_KEY, [job]);
+})
 
 
 client.on('interactionCreate', async (interaction: Interaction) => {
@@ -76,7 +92,7 @@ async function respond() {
     }
 
     const { content, files, interactionId } = res.message as DiscordResponse;
-    if(!content || !files || !interactionId) {
+    if(!content || !interactionId) {
       logConsole({ msg: `Error dequeueing from interaction queue - invalid message object\n${res}`, type: LogType.Error });
       continue;
     }
