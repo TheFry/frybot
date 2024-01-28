@@ -93,16 +93,10 @@ export async function processChats(client: DiscordClient) {
     const results = koboldRes.data.results as [{ text: string }]
     results.forEach(result => { msg += `${result.text}\n` })
     
-    // Split messages that are too long by words rather than characters
-    const regex = new RegExp(`(.{1,${DC_MSG_LIMIT}})(\\s|$)`, 'g');
-    const chunks = msg.match(regex) || [];
-    for(let chunk of chunks) {
-      try {
-        await dmChannel.send(chunk.trim());
-      } catch(err) {
-        logConsole({ msg: `Error sending chat message ${err}`, type: LogType.Error })
-        return;
-      }
+    try {
+      await dmChannel.send(msg);
+    } catch(err) {
+      logConsole({ msg: `Error sending chat message ${err}`, type: LogType.Error })
     }
   }
 }
