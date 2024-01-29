@@ -12,7 +12,30 @@ const ALLOWED_USERS = [
   'geeb420'
 ]
 
+
+
+// Grab most recent messages in the channel
+async function createPrompt(channel: DMChannel, count = 5) {
+  let prompt = "";
+  const contextLimit = 15;
+  let msgs;
+  try {
+    msgs = await channel.messages.fetch({ limit: count <= contextLimit ? count : contextLimit })
+  } catch(err) {
+    logConsole({ msg: `Error getting chat context - ${err}` });
+    return;
+  }
+
+  const reversed = [...msgs].reverse();
+  for(const msg of reversed) {
+    prompt += `<|im_end|>\n<|im_start|>user\n${msg[1].content}<|im_end|>\n<|im_start|>assistant\n`
+  }
+  return prompt;
+}
+
+
 export async function processChats(client: DiscordClient) {
+  const contextLength = 10;   // Number of previous messages to read. This doesn't affect context size of kobold
   let watching = true;
 
   while(watching) {
@@ -55,11 +78,14 @@ export async function processChats(client: DiscordClient) {
     }
 
     dmChannel = dmChannel as DMChannel;
+    const prompt = await createPrompt(dmChannel, contextLength);
+    if(!prompt) continue;
+    
     const genOptions: GenRequestBody = {
       n: 1,
-      max_context_length: 1600,
+      max_context_length: 4096,
       max_length: 350,
-      rep_pen: 1.1,
+      rep_pen: 1.0,
       temperature: 0.7,
       top_p: 0.92,
       top_k: 100,
@@ -74,7 +100,7 @@ export async function processChats(client: DiscordClient) {
       dynatemp_range: 0,
       presence_penalty: 0,
       logit_bias: {},
-      prompt: `<|im_end|>\n<|im_start|>user\n${job.prompt}<|im_end|>\n<|im_start|>assistant\n`,
+      prompt: prompt,
       quiet: true,
       stop_sequence: [`<|im_end|>\n<|im_start|>user`, `<|im_end|>\n<|im_start|>assistant`],
       use_default_badwordsids: false
