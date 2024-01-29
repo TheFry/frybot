@@ -9,7 +9,8 @@ const ALLOWED_USERS = [
   'phatgeeb',
   'itsicg',
   'cnolan_20',
-  'geeb420'
+  'geeb420',
+  'peterr2717'
 ]
 
 
@@ -83,8 +84,8 @@ export async function processChats(client: DiscordClient) {
     
     const genOptions: GenRequestBody = {
       n: 1,
-      max_context_length: 4096,
-      max_length: 350,
+      max_context_length: 8192,
+      max_length: 512,
       rep_pen: 1.0,
       temperature: 0.7,
       top_p: 0.92,
@@ -111,7 +112,7 @@ export async function processChats(client: DiscordClient) {
       koboldRes = await axios.post(GEN_ENDPOINT, genOptions);
     } catch(err) {
       logConsole({ msg: `Error sending request to kobold: ${err}`, type: LogType.Error });
-      await dmChannel.send(`*snores*`)
+      await dmChannel.send(`Sorry! I'm unavailable at the moment.`)
       continue;
     }
 
@@ -119,10 +120,13 @@ export async function processChats(client: DiscordClient) {
     const results = koboldRes.data.results as [{ text: string }]
     results.forEach(result => { msg += `${result.text}\n` })
     
-    try {
-      await dmChannel.send(msg);
-    } catch(err) {
-      logConsole({ msg: `Error sending chat message ${err}`, type: LogType.Error })
+    for (let i = 0; i < msg.length; i += 2000) {
+      let chunk = msg.substring(i, i + 2000);
+      try {
+        await dmChannel.send(chunk);
+      } catch(err) {
+        logConsole({ msg: `Error sending chat message ${err}`, type: LogType.Error })
+      }
     }
   }
 }
