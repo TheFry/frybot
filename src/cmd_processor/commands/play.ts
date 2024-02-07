@@ -5,7 +5,8 @@ import { SlashCommandBuilder,
   ComponentType,
   ChatInputCommandInteraction,
   GuildMember } from 'discord.js';
-  
+
+import { decode } from 'html-entities';
 import * as yt from '../../helpers/youtube';
 import { redisClient } from '../../helpers/redis';
 import { addSong, PlaylistEntry } from '../../helpers/playlist';
@@ -26,7 +27,8 @@ async function getSelection(interaction: ChatInputCommandInteraction): Promise<A
 
   const rows: ActionRowBuilder<ButtonBuilder> [] = [];
   searchData.forEach((result: yt.YTSearchResult) => {
-    const label = result.name.length > MAX_BTN_TEXT ? `${result.name.slice(0, MAX_BTN_TEXT - 4)} ...` : result.name;
+    let label = result.name.length > MAX_BTN_TEXT ? `${result.name.slice(0, MAX_BTN_TEXT - 4)} ...` : result.name;
+    label = decode(label, { level: 'all' })
     rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
       [ new ButtonBuilder()
         .setCustomId(`${result.id}`)
