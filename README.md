@@ -30,7 +30,7 @@ The interaction processor handles all user interaction. It waits for ChatInputCo
 - `/pause` - Sends a signal to redis which pauses the voicebot.
 - `/unpause` - Sends a signal to redis which unpauses the voicebot.
 - `/skip` - Sends a signal to redis which triggers the voicebot to skip to the next song.
-- `replay` - Sends a signal to redis which triggers the voicebot to either replay the current song when it is complete or replay the last played song if nothing is playing.
+- `/replay` - Sends a signal to redis which triggers the voicebot to either replay the current song when it is complete or replay the last played song if nothing is playing.
 - `/clip` - Clip a youtube video and return the audio. Useful for creating soundboard entries.
 
 ### Voice Bots
