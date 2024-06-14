@@ -70,6 +70,8 @@ export class VoiceBot {
   eventList: List<ChannelEvent>;
   readyForEvents: boolean;
   cancelWatch: EventEmitter;
+  nowPlaying: PlaylistEntry | null;
+  lastPlayed: PlaylistEntry | null;
 
 
   constructor(options: ConstructorOptions) {
@@ -84,6 +86,8 @@ export class VoiceBot {
     this.eventList = new List();
     this.readyForEvents = false;
     this.cancelWatch = new EventEmitter();
+    this.nowPlaying = null;
+    this.lastPlayed = null;
   }
 
   
@@ -184,6 +188,9 @@ export class VoiceBot {
       return;
     }
 
+    this.lastPlayed = this.nowPlaying;
+    this.nowPlaying = null;
+
     const promises: Promise<unknown> [] = [];
     promises.push(getSong(this.channelId, skip ? -1 : this.idleTimeout));
     promises.push(once(this.cancelWatch, CANCEL_WATCH_EVENT));
@@ -224,7 +231,7 @@ export class VoiceBot {
       await addSong(this.channelId, [entry], true);
       throw err;
     }
-
+    this.nowPlaying = entry;
     logConsole({ msg: `Channel ${this.channelId} - playing ${entry.youtubeVideoTitle}`, type: LogType.Debug });
   }
 
@@ -256,6 +263,16 @@ export class VoiceBot {
     } else {
       const msg = `Queue is ${unpause ? 'unpaused' : 'paused'}`
       logConsole({ msg: `Channel ${this.channelId} - ${msg}`, type: LogType.Debug }) 
+    }
+  }
+
+  async replay() {
+    if(this.nowPlaying) {
+      addSong(this.channelId, [ this.nowPlaying ], true);
+    } else if(this.lastPlayed) {
+      addSong(this.channelId, [ this.lastPlayed ], true);
+    } else {
+      logConsole({ msg: "Error: Could not replay. No now playing or last played vars are set!", type: LogType.Error })
     }
   }
 
@@ -297,6 +314,9 @@ export class VoiceBot {
           break;
         case 'unpause':
           await this.pause(true);
+          break;
+        case 'replay':
+          await this.replay()
           break;
       }
     }

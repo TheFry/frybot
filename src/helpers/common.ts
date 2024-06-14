@@ -7,7 +7,7 @@ export class DiscordClient extends Client { commands: any }
 
 
 export interface ChannelEvent {
-	type: 'stop' | 'skip' | 'pause' | 'unpause';
+	type: 'stop' | 'skip' | 'pause' | 'unpause' | 'replay';
 	channelId: Snowflake;
   interactionId?: Snowflake;
 }
