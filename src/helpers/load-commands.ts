@@ -10,6 +10,7 @@ class DiscordClient extends Client { commands: any }
 
 const DEPLOY = process.env['DEPLOY'] ? true : false;
 const DELETE = process.env['DELETE'] ? true : false;
+const GLOBAL = process.env['GLOBAL'] ? true : false;
 
 
 // Load commands in src/commands
@@ -37,11 +38,16 @@ export default async function load(client: DiscordClient, token: string, clientI
   }
 
   if(DEPLOY) {
-    const data = await rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: commands })
+    let data;
+    if(GLOBAL) {
+      data = await rest.put(Routes.applicationCommands(clientID), { body: commands });
+    } else {
+      data = await rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: commands });
+    }
     let checked;
     if(hasProperties(data, ['length'])) {
       checked = data as { [length: string]: number }
-      logConsole({ msg: `Successfully registered ${checked.length} application commands.` })
+      logConsole({ msg: `Successfully registered ${checked.length} application commands${GLOBAL ? " globally." : " ."}` });
     }
   }
 }
