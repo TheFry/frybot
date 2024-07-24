@@ -1,5 +1,5 @@
 import axios from 'axios';
-import ytdl from 'ytdl-core';
+import ytdl = require('@distube/ytdl-core')
 import { ReadStream, appendFileSync } from 'fs';
 import { LogType, logConsole } from './logger';
 import { FileHandle, open } from 'fs/promises';
