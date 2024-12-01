@@ -247,7 +247,14 @@ export async function playlistToVideos(playlistId: string, key: string): Promise
 
 
 export async function download(songId: string, path?: string): Promise<Readable> {
-  const download = ytdl(songId, { filter: 'audioonly' });
+  let download: Readable;
+  try {
+    download = ytdl(songId, { filter: 'audioonly' });
+  } catch(err) {
+    logConsole({ msg: `ytdl error while downloading: ${err}` })
+    throw(err)
+  }
+
   if(!path) return download as ReadStream;
   let f: FileHandle;
 
