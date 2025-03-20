@@ -1,17 +1,17 @@
 import ffmpeg from 'fluent-ffmpeg';
+import { randomBytes } from 'crypto';
 import { INTERACTION_QUEUE_KEY, CLIP_QUEUE_KEY, ClipJob, MEDIA_DIR } from "../helpers/common";
 import { dequeue, enqueue } from "../helpers/message_queue";
 import * as yt from '../helpers/youtube';
 import { DiscordResponse } from "../helpers/interactions";
-import { nanoid } from "nanoid/non-secure";
 import { rmSync } from "fs";
 import { newClient } from "../helpers/redis";
 import { LogType, logConsole } from "../helpers/logger";
 
 async function clip(job: ClipJob) {
   const link = `https://youtube.com/watch?v=${job.video.id}`;
-  const rawPath = `${MEDIA_DIR}/${nanoid()}`;
-  const outputPath = `${MEDIA_DIR}/${nanoid()}.mp3`;
+  const rawPath = `${MEDIA_DIR}/${randomBytes(8).toString('base64url')}`;
+  const outputPath = `${MEDIA_DIR}/${randomBytes(8).toString('base64url')}.mp3`;
   const ytStream = await yt.download(link, rawPath);
 
   logConsole({ msg: `Processing ${job}` })

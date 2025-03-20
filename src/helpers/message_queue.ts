@@ -1,4 +1,5 @@
-import { nanoid } from 'nanoid/non-secure';
+
+import { randomBytes } from 'crypto';
 import { redisClient } from './redis';
 
 export interface EnqueueResponseStatus {
@@ -31,7 +32,7 @@ export interface EnqueueOptions {
 export async function enqueue(queueKey: string, messages: unknown[], inFront = false) {
   const responses: Array<EnqueueResponse> = [];
   for(const message of messages) {
-    const uuid = nanoid();
+    const uuid = randomBytes(8).toString('base64url');
     const entryKey = `${queueKey}-entry:${uuid}`;
     let status;
     try {
