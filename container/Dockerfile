@@ -1,4 +1,4 @@
-FROM node:18-alpine as base
+FROM node:22.14.0-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache ffmpeg python3 alpine-sdk
 COPY package.* tsconfig.json ./
