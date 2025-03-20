@@ -4,7 +4,8 @@ import { SlashCommandBuilder,
   ButtonStyle,
   ComponentType,
   ChatInputCommandInteraction,
-  GuildMember } from 'discord.js';
+  GuildMember, 
+  ButtonComponent} from 'discord.js';
 
 import { decode } from 'html-entities';
 import * as yt from '../../helpers/youtube';
@@ -46,8 +47,9 @@ async function getSelection(interaction: ChatInputCommandInteraction): Promise<A
     interaction.editReply({ content: 'Timeout waiting for input', components: [] })
     return [null, null];
   }
-  if(!choice.component.label) return [null, null]
-  return [choice.customId, choice.component.label]
+  const btn = choice.component as ButtonComponent
+  if(!btn.label) return [null, null]
+  return [choice.customId, btn.label]
 }
 
 
