@@ -1,5 +1,8 @@
 {
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.777.0",
+    "@aws-sdk/client-sts": "^3.777.0",
+    "@aws-sdk/credential-provider-node": "^3.777.0",
     "@discordjs/opus": "^0.10.0",
     "@discordjs/voice": "^0.18.0",
     "@distube/ytdl-core": "^4.13.5",

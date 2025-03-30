@@ -19,6 +19,7 @@ export interface ClipJob {
   interactionId: Snowflake;
 }
 
+
 export const FREE_CHANNELS_KEY = 'frybot:free-channels';
 export const WATCHED_CHANNELS_KEY = 'frybot:reserved-channels';
 export const CHANNEL_EVENT_KEY = 'discord:channel-events';
@@ -26,24 +27,16 @@ export const CLIP_QUEUE_KEY =  'frybot:clip-jobs-queue';
 export const INTERACTION_QUEUE_KEY = 'frybot:interaction-queue';
 export const MEDIA_DIR = '/frybot_media';
 
-function usage(missing: string): void {
+export function usage(missing: string, exit: number | undefined = undefined): void {
   logConsole({ msg: `
   Missing variable ${missing}
 	Usage: DC_TOKEN=<bot token> \\
 		  DC_CLIENT=<bot client id> \\
 		  G_ID=<bot guild id> \\
 		  YT_TOKEN=<youtube key> \\
-		  MONGO_CONN_STRING=<mongodb conn string> \\
 		  node ${__dirname}/main.js
 	`, type: LogType.Error});
-}
-
-export function checkVars(): void {
-  process.env['DC_TOKEN'] || usage('DC_TOKEN'); 
-  process.env['DC_CLIENT'] || usage('DC_CLIENT');
-  process.env['YT_TOKEN'] || usage('YT_TOKEN');
-  process.env['G_ID'] || usage('G_ID');
-  // process.env['MONGO_CONN_STRING'] || usage();
+  if(exit !== undefined) process.exit(exit)
 }
 
 
