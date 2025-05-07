@@ -42,11 +42,9 @@ async function findImages(attachments: Collection<Snowflake, Attachment>) : Prom
 // Process new message in a thread
 async function newThreadMessage(thread: PublicThreadChannel, message: Message, chatbot: BedRockChatBot) {
   thread.sendTyping();
-  findImages(message.attachments).then(images => {
-    chatbot.converse(message.content, images).then((response) => {
-      thread.send(response);
-    })
-  })
+  const images = await findImages(message.attachments);
+  const response = await chatbot.converse(message.content, images);
+  thread.send(response);
 }
 
 
