@@ -3,6 +3,7 @@ import { ImageFormat } from '@aws-sdk/client-bedrock-runtime';
 import { create } from 'axios';
 import { Collection,  Message, ChannelType, Attachment, Snowflake, Client, TextChannel, PublicThreadChannel } from 'discord.js';
 import { LogType, logConsole } from '../helpers/logger';
+import { print } from 'ioredis';
 
 const DC_CLIENT = process.env['DC_CLIENT'] || '';
 
@@ -60,7 +61,7 @@ async function startChat(message: Message) {
   }) as PublicThreadChannel;
   await thread.sendTyping();
   const images = await findImages(message.attachments)
-  await thread.send(await chatbot.converse(`My name is ${message.author.username}. ${message.content.replace('@devbot', '')}`, images));
+  await thread.send(await chatbot.converse(`My name is ${message.author.username}. ${message.content.replace(`<@${DC_CLIENT}>`, '')}`, images));
 
   const collector = await thread.createMessageCollector();
   collector.on('collect', (msg) => {
