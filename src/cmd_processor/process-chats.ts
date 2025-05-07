@@ -2,6 +2,7 @@ import { BedRockChatBot, ImageAttachment } from '../helpers/BedrockChatBot';
 import { ImageFormat } from '@aws-sdk/client-bedrock-runtime';
 import { create } from 'axios';
 import { Collection,  Message, ChannelType, Attachment, Snowflake, Client, TextChannel, PublicThreadChannel } from 'discord.js';
+import { LogType, logConsole } from '../helpers/logger';
 
 const DC_CLIENT = process.env['DC_CLIENT'] || '';
 
@@ -27,9 +28,12 @@ async function findImages(attachments: Collection<Snowflake, Attachment>) : Prom
       || attachment.height as number > maxHeight
       || attachment.width as number > maxWidth
     ) continue;
-    console.log(attachment.url);
-    const res = await axios.get(attachment.url, { responseType: 'arraybuffer' })
-    images.push({ data: new Uint8Array(res.data), type: attachment.contentType.split("/")[1] as ImageFormat });
+    try {
+      const res = await axios.get(attachment.url, { responseType: 'arraybuffer' }); 
+      images.push({ data: new Uint8Array(res.data), type: attachment.contentType.split("/")[1] as ImageFormat });
+    } catch (err) {
+      logConsole({ msg: `Error downloading image ${attachment.url} - ${err}`, type: LogType.Error });
+    }
   }
   return images;
 }
