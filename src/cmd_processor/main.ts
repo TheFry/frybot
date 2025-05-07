@@ -1,12 +1,13 @@
 import loadCommands from '../helpers/load-commands';
-import { Client, Collection, GatewayIntentBits, Interaction, Message, ChannelType, MentionableSelectMenuBuilder } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, Interaction } from 'discord.js';
 import { checkVars, DiscordClient, INTERACTION_QUEUE_KEY } from '../helpers/common';
 import { addInteraction, DiscordResponse, interactions } from '../helpers/interactions';
 import { newClient as newRedisClient } from '../helpers/redis';
 import { dequeue } from '../helpers/message_queue';
 import { rmSync } from 'fs';
 import { LogType, logConsole } from '../helpers/logger';
-import { BedRockChatBot } from '../helpers/BedrockChatBot';
+import { startProcessing } from './process-chats';
+
 
 checkVars();
 const DC_TOKEN = process.env['DC_TOKEN'] || '';
@@ -27,42 +28,10 @@ client.once('ready', async () => {
   logConsole({ msg: 'Client logged in!' });
   await newRedisClient();
   client.commands = new Collection();
+  startProcessing(client)
   loadCommands(client, DC_TOKEN, DC_CLIENT, '../cmd_processor/commands', G_ID);
   respond();
 });
-
-const startedThreads: any = {}
-client.on('messageCreate', async (message: Message) => {
-  // console.log('new message!')
-  // Filter the message to mentions of a top level thread
-  // console.log(message.channel.type);
-  // console.log(message.hasThread);
-  if(! message.hasThread
-    && message.channel.type === ChannelType.GuildText 
-    && message.mentions
-    && message.mentions.users
-    && message.mentions.users.get(DC_CLIENT)
-    && message.mentions.users.size === 1
-    && message.author.username === 'thefry') {
-      const chatbot = new BedRockChatBot({ maxTokens: 500 });
-      const thread = await message.channel.threads.create({
-        type: ChannelType.PublicThread,
-        name: `New thread with ${message.author.username} ${message.id}`,
-        reason: 'Someone wants to chat!',
-        autoArchiveDuration: 60
-      });
-      await thread.sendTyping();
-      await thread.send(await chatbot.converse(`My name is ${message.author.username}. ${message.content}`));
-      const collector = await thread.createMessageCollector();
-      collector.on('collect', (msg) => {
-        if(msg.author.id === DC_CLIENT) return;
-        thread.sendTyping();
-        chatbot.converse(msg.content).then((response) => {
-          thread.send(response);
-        })
-      })
-    } 
-})
 
 
 client.on('interactionCreate', async (interaction: Interaction) => {

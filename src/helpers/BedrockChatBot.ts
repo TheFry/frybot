@@ -1,10 +1,9 @@
-import { ChatBot } from "./ChatBot";
 import {
   BedrockRuntimeClient,
   ConverseCommand,
   Message,
   SystemContentBlock,
-  InferenceConfiguration
+  InferenceConfiguration,
 } from "@aws-sdk/client-bedrock-runtime";
 
 interface BedRockChatBotOptions {
@@ -14,7 +13,12 @@ interface BedRockChatBotOptions {
   maxTokens: number;
 }
 
-export class BedRockChatBot extends ChatBot {
+export interface ImageAttachment {
+  data: Uint8Array;
+  type: "png" | "jpeg" | "gif" | "webp";
+}
+
+export class BedRockChatBot {
   public readonly modelId: string;
   public readonly region: string;
   private client: BedrockRuntimeClient;
@@ -22,7 +26,7 @@ export class BedRockChatBot extends ChatBot {
   private messages: Message[];
   private inferenceConfig: InferenceConfiguration;
   private defaultSystemPrompt = `
-  You are frybot, a sharp-witted AI assistant designed for an adult-oriented Discord server. Your personality is:
+  You are frybot, a sharp-witted AI assistant designed for an adult-oriented chatting. Your personality is:
 
   Core Traits:
   - Intelligent and quick-witted
@@ -53,59 +57,75 @@ export class BedRockChatBot extends ChatBot {
   - Contextual understanding
   - Playful intellectual engagement
 
-  Always prioritize being an entertaining and interesting conversational partner.
-  `
+  Your goal is to be an entertaining and interesting conversational partner who contains a wealth of knowledge.
+  Avoid repetition in your response structure: try to make each response's structure be a bit different from the previous one.
+  `;
 
   constructor(options: BedRockChatBotOptions) {
-    super();
+    // super(); // Call the base class constructor
     this.modelId = options.modelId || "us.anthropic.claude-3-5-haiku-20241022-v1:0";
     this.region = options.region || "us-east-1";
     this.client = new BedrockRuntimeClient({ region: this.region });
     this.messages = [];
 
-    this.systemPrompt = [{
-      text: options.systemPrompt || this.defaultSystemPrompt
-    }];
+    this.systemPrompt = [
+      {
+        text: options.systemPrompt || this.defaultSystemPrompt,
+      },
+    ];
     this.inferenceConfig = {
-      maxTokens: options.maxTokens || 500
-    }
+      maxTokens: options.maxTokens || 500,
+    };
   }
 
-  public async converse(newMessage: string) {
+  // Override the converse method
+  public async converse(input: string, images: ImageAttachment[] | undefined = undefined): Promise<string> {
     this.messages.push({
       role: "user",
       content: [
         {
-          text: newMessage
-        }
-      ]
-    })
+          text: input
+        },
+      ],
+    });
+    if(images) {
+      for(const image of images) {
+        this.messages.push({
+          role: "user",
+          content: [
+            {
+              image: {
+                format: image.type,
+                source: {
+                  bytes: image.data
+                }
+              }
+            },
+          ],
+        });
+      }
+    }
+
     const command: ConverseCommand = new ConverseCommand({
       modelId: this.modelId,
       messages: this.messages,
       system: this.systemPrompt,
-      inferenceConfig: this.inferenceConfig
+      inferenceConfig: this.inferenceConfig,
     });
     const response = await this.client.send(command);
-    if(!response.output || ! response.output.message || !response.output.message.content) {
+    if (!response.output || !response.output.message || !response.output.message.content) {
       throw new Error("No response from Bedrock");
     }
     let responseText = "";
     this.messages.push(response.output.message);
-    response.output.message.content.forEach(block => {
+    response.output.message.content.forEach((block) => {
       responseText += `${block.text}\n`;
     });
     return responseText;
   }
-}
 
-export async function generateSystemPrompt(botPrompt: string) {
-  const systemPrompt = `
-  You are a world class prompt engineer specializing in the claude haiku model.
-  You generate detailed system prompts for other bots to use in their conversations.
-  Your goal is to provide a clear, concise, and engaging prompt that helps the user understand the bot's capabilities, limitations, conversation style, and emotion.
-  `
-  const bot = new BedRockChatBot({ maxTokens: 1000, systemPrompt: systemPrompt });
-  const response = await bot.converse(botPrompt);
-  return response;
+  // Override the generateImage method
+  public async generateImage(input: string): Promise<string> {
+    return `Image generation is not yet implemented for input: ${input}`;
+  }
 }
