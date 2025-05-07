@@ -65,8 +65,10 @@ async function startChat(message: Message) {
   const collector = await thread.createMessageCollector();
   collector.on('collect', (msg) => {
     if(msg.author.id === DC_CLIENT) return;
-    newThreadMessage(thread, msg, chatbot).then(() => { return 0 })
-  })
+    newThreadMessage(thread, msg, chatbot).then(() => { return 0 }).catch((err) => {
+      logConsole({ msg: `Error processing new thread message - ${err}`, type: LogType.Error });
+    });
+  });
 }
 
 
@@ -80,7 +82,10 @@ export function startProcessing(client: Client) {
       && message.mentions.users
       && message.mentions.users.get(DC_CLIENT)
       && message.mentions.users.size === 1) {
-      startChat(message)
-    } 
+      startChat(message).catch((err) => {
+        logConsole({ msg: `Error starting chat - ${err}`, type: LogType.Error });
+        message.reply({ content: 'Error starting chat! Please try again later.' });
+      });
+    }
   })
 }
