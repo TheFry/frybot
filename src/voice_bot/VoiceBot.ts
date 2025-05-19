@@ -56,6 +56,7 @@ interface ConnectOptions {
   guildId: Snowflake;
   voiceAdapter: InternalDiscordGatewayAdapterCreator;
   channelName?: string;
+  deafened?: boolean;
 }
 
 export class VoiceBot {
@@ -123,7 +124,8 @@ export class VoiceBot {
       connection = joinVoiceChannel({
         channelId: options.channelId,
         guildId: options.guildId,
-        adapterCreator: options.voiceAdapter
+        adapterCreator: options.voiceAdapter,
+        selfDeaf: options.deafened,
       });
       await entersState(connection, VoiceConnectionStatus.Ready, 5000);
     }
