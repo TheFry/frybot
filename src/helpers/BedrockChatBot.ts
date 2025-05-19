@@ -6,6 +6,10 @@ import {
   InferenceConfiguration,
 } from "@aws-sdk/client-bedrock-runtime";
 
+import { PollyClient, SynthesizeSpeechCommand, SynthesizeSpeechCommandInput } from "@aws-sdk/client-polly";
+
+import { StartTranscriptionJobCommand } from "@aws-sdk/client-transcribe";
+
 interface BedRockChatBotOptions {
   systemPrompt?: string;
   modelId?: string;
@@ -22,11 +26,12 @@ export class BedRockChatBot {
   public readonly modelId: string;
   public readonly region: string;
   private client: BedrockRuntimeClient;
+  private pollyClient: PollyClient;
   private systemPrompt: SystemContentBlock[];
   private messages: Message[];
   private inferenceConfig: InferenceConfiguration;
   private defaultSystemPrompt = `
-  You are frybot, a sharp-witted AI assistant designed for an adult-oriented chatting. Your personality is:
+  You are frybot, a sharp-witted AI assistant designed for chatting. Your personality is:
 
   Core Traits:
   - Intelligent and quick-witted
@@ -66,6 +71,7 @@ export class BedRockChatBot {
     this.modelId = options.modelId || "us.anthropic.claude-3-5-haiku-20241022-v1:0";
     this.region = options.region || "us-east-1";
     this.client = new BedrockRuntimeClient({ region: this.region });
+    this.pollyClient = new PollyClient({region: this.region })
     this.messages = [];
 
     this.systemPrompt = [
@@ -112,6 +118,7 @@ export class BedRockChatBot {
       system: this.systemPrompt,
       inferenceConfig: this.inferenceConfig,
     });
+
     const response = await this.client.send(command);
     if (!response.output || !response.output.message || !response.output.message.content) {
       throw new Error("No response from Bedrock");
@@ -127,5 +134,24 @@ export class BedRockChatBot {
   // Override the generateImage method
   public async generateImage(input: string): Promise<string> {
     return `Image generation is not yet implemented for input: ${input}`;
+  }
+
+  public async textToSpeech(textInput: string): Promise<ReadableStream> {
+    const commandInput: SynthesizeSpeechCommandInput = {
+      Engine: "generative",
+      LanguageCode: "en-US",
+      OutputFormat: "mp3",
+      Text: textInput,
+      TextType: "text",
+      VoiceId: "Ruth",
+    }
+
+    const command = new SynthesizeSpeechCommand(commandInput);
+    const response = await this.pollyClient.send(command);
+    if (!response.AudioStream) {
+      throw new Error("No audio stream from Polly");
+    }
+
+    return response.AudioStream.transformToWebStream();
   }
 }
