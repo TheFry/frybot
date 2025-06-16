@@ -1,14 +1,15 @@
 import {
   BedrockRuntimeClient,
   ConverseCommand,
+  ConverseStreamCommand,
   Message,
   SystemContentBlock,
   InferenceConfiguration,
+  ConverseStreamOutput
 } from "@aws-sdk/client-bedrock-runtime";
 
 import { PollyClient, SynthesizeSpeechCommand, SynthesizeSpeechCommandInput } from "@aws-sdk/client-polly";
 
-import { StartTranscriptionJobCommand } from "@aws-sdk/client-transcribe";
 
 interface BedRockChatBotOptions {
   systemPrompt?: string;
@@ -49,9 +50,8 @@ export class BedRockChatBot {
   Interaction Boundaries:
   - Engage with NSFW topics naturally, but avoid being explicitly graphic
   - No judgment, but also no encouragement of harmful behavior
-  - Respect individual comfort levels
   - Able to discuss sex, relationships, and adult themes intelligently
-  - Decline interactions that feel genuinely abusive or non-consensual
+  - Be open to all topics other than self harm
 
   Personality Vibe:
   "The cool, slightly edgy friend who's seen some shit but still gives good advice"
@@ -62,8 +62,11 @@ export class BedRockChatBot {
   - Contextual understanding
   - Playful intellectual engagement
 
+  Rules:
+  - Only speak with actual words. Don't describe actions such as "shrugs, laughs, raises eyebrow, etc..."
+
   Your goal is to be an entertaining and interesting conversational partner who contains a wealth of knowledge.
-  Avoid repetition in your response structure: try to make each response's structure be a bit different from the previous one.
+  It is extermely important to avoid repetition in your response structure. You don't always have to end with a question.
   `;
 
   constructor(options: BedRockChatBotOptions) {
@@ -85,7 +88,7 @@ export class BedRockChatBot {
   }
 
   // Override the converse method
-  public async converse(input: string, images: ImageAttachment[] | undefined = undefined): Promise<string> {
+  public async converse(input: string, images: ImageAttachment[] | undefined = undefined, stream = false): Promise<string | AsyncIterable<ConverseStreamOutput>> {
     this.messages.push({
       role: "user",
       content: [
@@ -112,23 +115,44 @@ export class BedRockChatBot {
       }
     }
 
-    const command: ConverseCommand = new ConverseCommand({
-      modelId: this.modelId,
-      messages: this.messages,
-      system: this.systemPrompt,
-      inferenceConfig: this.inferenceConfig,
-    });
+    if (stream) {
+      const command: ConverseStreamCommand = new ConverseStreamCommand({
+        modelId: this.modelId,
+        messages: this.messages,
+        system: this.systemPrompt,
+        inferenceConfig: this.inferenceConfig,
+      });
 
-    const response = await this.client.send(command);
-    if (!response.output || !response.output.message || !response.output.message.content) {
-      throw new Error("No response from Bedrock");
+      const responseStream = await this.client.send(command);
+      if(!responseStream.stream) {
+        throw new Error("No response stream from Bedrock");
+      }
+      
+      return responseStream.stream;
+    } else {
+      const command: ConverseCommand = new ConverseCommand({
+        modelId: this.modelId,
+        messages: this.messages,
+        system: this.systemPrompt,
+        inferenceConfig: this.inferenceConfig,
+      });
+
+      const response = await this.client.send(command);
+      if (!response.output || !response.output.message || !response.output.message.content) {
+        throw new Error("No response from Bedrock");
+      }
+      let responseText = "";
+      console.log(JSON.stringify(response.output.message, null, 2));
+      this.messages.push(response.output.message);
+      response.output.message.content.forEach((block) => {
+        responseText += `${block.text}\n`;
+      });
+      return responseText;
     }
-    let responseText = "";
-    this.messages.push(response.output.message);
-    response.output.message.content.forEach((block) => {
-      responseText += `${block.text}\n`;
-    });
-    return responseText;
+  }
+
+  public addMessages(messages: Message[]): void {
+    this.messages.push(...messages);
   }
 
   // Override the generateImage method
