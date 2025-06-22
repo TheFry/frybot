@@ -10,9 +10,16 @@ import { OpusEncoder } from "@discordjs/opus";
 import ffmpeg from 'fluent-ffmpeg';
 import { getClient, textToSpeech, speechToText, textToSpeechSocket } from '../helpers/eleven';
 import { createReadStream } from 'fs';
+import { writeFile } from 'fs/promises';
+import { search as ytSearch } from '../helpers/youtube';
 import { ConverseStreamOutput } from '@aws-sdk/client-bedrock-runtime';
 const DC_CLIENT = process.env['DC_CLIENT'] || '';
 import { ElevenLabsClient } from 'elevenlabs';
+import { addSong, PlaylistEntry } from '../helpers/playlist';
+import { redisClient } from '../helpers/redis';
+import { FREE_CHANNELS_KEY, WATCHED_CHANNELS_KEY } from '../helpers/common';
+
+
 
 const allowedUsers = [
   '399424828634824704', //thefry
@@ -67,12 +74,12 @@ async function websocketTTS(chatbot: BedRockChatBot, text: string, voicePlayer: 
   const audioStream = new Readable({ read() {}});
   let firstChunk = true;
 
-  let said = '';
+  let processedAudio = '';
   websocket.addEventListener('message', (event) => {
     const audio = JSON.parse(event.data)['audio'];
     const alignment = JSON.parse(event.data)['normalizedAlignment'];
     if(alignment && alignment['chars']) {
-      said += alignment['chars'].join('').replace(/[^a-zA-Z0-9]/g, '');
+      processedAudio += alignment['chars'].join('').replace(/[^a-zA-Z0-9]/g, '');
     }
     if(audio) {
       audioStream.push(Buffer.from(audio, 'base64'));
@@ -83,7 +90,9 @@ async function websocketTTS(chatbot: BedRockChatBot, text: string, voicePlayer: 
       voicePlayer.play(resource);
     }
     if(llmDone) {
-      if(said === bedrockResponseText.replace(/[^a-zA-Z0-9]/g, '')) {
+      // Compare the llm output with the processed audio
+      // If they match, end the audio stream so discordjs can stop playing
+      if(processedAudio === bedrockResponseText.replace(/[^a-zA-Z0-9]/g, '')) {
         audioStream.push(null);
       }
     }
@@ -118,9 +127,11 @@ async function websocketTTS(chatbot: BedRockChatBot, text: string, voicePlayer: 
   }]);
 }
 
-async function restTTS(chatbot: BedRockChatBot, elevenClient: ElevenLabsClient, text: string, voicePlayer: AudioPlayer) {
-  const response = await chatbot.converse(text) as string;
-  const audioStream = await textToSpeech(elevenClient, response);
+async function restTTS(chatbot: BedRockChatBot, elevenClient: ElevenLabsClient, text: string, voicePlayer: AudioPlayer, converse = true) {
+  if(converse) {
+    text = await chatbot.converse(text) as string;
+  }
+  const audioStream = await textToSpeech(elevenClient, text);
   const resource = createAudioResource(audioStream);
   voicePlayer.play(resource);
   await entersState(voicePlayer, AudioPlayerStatus.Idle, 300_000);
@@ -129,19 +140,21 @@ async function restTTS(chatbot: BedRockChatBot, elevenClient: ElevenLabsClient, 
 
 async function processUserAudio(voiceReceiver: VoiceReceiver, member: GuildMember, i: number) {
   const voiceSub = voiceReceiver.subscribe(member.id, { end: { behavior: EndBehaviorType.AfterInactivity, duration: 1500 } });
-  const ffmpegOptions = ['-f s16le', '-ar 48k', '-ac 2'];
+  const ffmpegInputOptions = ['-f s16le', '-ar 48k', '-ac 2'];
+  const ffmpegOutputOptions = ['-f s16le', '-ar 16k', '-ac 1']
   const decodedStream = new Readable({ read(){} });
   const decoder = new OpusEncoder(48000, 2);
 
   await new Promise<void>((resolve, reject) => {
     ffmpeg(decodedStream)
-      .inputOptions(ffmpegOptions)
+      .inputOptions(ffmpegInputOptions)
+      // .outputOptions(ffmpegOutputOptions)
       .output(`test${i}.mp3`)
       .on('error', (err: any) => {
         logConsole({ msg: `Error processing audio - ${err}`, type: LogType.Error });
         reject(err);
       })
-      .on('end', async () => {
+      .on('end', () => {
         try {
           console.log('Finished processing audio')
           resolve();
@@ -199,7 +212,31 @@ async function listenAndProcessAudio(member: GuildMember, thread: PublicThreadCh
       thread.send('Goodbye!');
       break;
     }
-    await websocketTTS(chatbot, text, voicePlayer, websocket);
+    const intent = await chatbot.determineIntent(text);
+    if(intent.intent === 'music_command') {
+      const result = (await ytSearch(intent.song, 1, 'video', process.env['YT_TOKEN'] || ''))[0];
+      const channelId = member.voice.channelId as string;
+      
+      // Throw the guildId in redis with the channel id as a key
+      // Voicebots use this rather than querying discord for it
+      await redisClient?.setnx(`discord:channel:${channelId}:guild-id`, member.guild.id);
+
+      // Add channel to free-channels if it isn't already in watched-channels
+      await redisClient?.checkIfWatched(WATCHED_CHANNELS_KEY, FREE_CHANNELS_KEY, channelId);
+
+      const entry: PlaylistEntry = {
+        youtubeVideoId: result.id,
+        youtubeVideoTitle: result.name,
+        interactionId: 'undefined'
+      }
+
+      console.log(`Adding song ${result.name} to channel ${channelId}`);
+      await restTTS(chatbot, elevenClient, `Sure, adding ${result.name} to the music queue.`, voicePlayer, false);
+      await addSong(channelId, [entry]);
+    } else {
+      await websocketTTS(chatbot, text, voicePlayer, websocket);
+    }
+    
     // await restTTS(chatbot, elevenClient, text, voicePlayer);
   }
 }
