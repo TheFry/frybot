@@ -43,6 +43,7 @@ export function checkVars(): void {
   process.env['DC_CLIENT'] || usage('DC_CLIENT');
   process.env['YT_TOKEN'] || usage('YT_TOKEN');
   process.env['G_ID'] || usage('G_ID');
+  process.env['ELEVEN_LABS_KEY'] || usage('ELEVEN_LABS_KEY');
   // process.env['MONGO_CONN_STRING'] || usage();
 }
 
