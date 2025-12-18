@@ -22,7 +22,7 @@ client.login(DC_TOKEN)
   })
 
 
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   logConsole({ msg: 'Client logged in!' });
   await newRedisClient();
   client.commands = new Collection();

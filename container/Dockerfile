@@ -1,8 +1,8 @@
-FROM node:22.14.0-alpine AS base
+FROM node:24.12-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache ffmpeg python3 alpine-sdk
-COPY package.* tsconfig.json ./
-RUN npm install
+COPY package.json package-lock.json tsconfig.json ./
+RUN npm ci
 
 FROM base
 WORKDIR /app
