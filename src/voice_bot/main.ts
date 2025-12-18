@@ -19,7 +19,7 @@ client.login(DC_TOKEN)
   })
 
 
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   logConsole({ msg: 'Client logged in!' });
   const redisClient = await newRedisClient();
   reserveChannels(redisClient);
