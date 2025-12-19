@@ -1,8 +1,7 @@
 import axios from 'axios';
-import ytdl = require('@distube/ytdl-core')
-import { ReadStream, appendFileSync } from 'fs';
+import { ChildProcess, spawn } from 'child_process';
+import { open } from 'fs/promises';
 import { LogType, logConsole } from './logger';
-import { FileHandle, open } from 'fs/promises';
 import { Readable } from 'stream';
 import { hasProperties } from './common';
 
@@ -11,6 +10,7 @@ const VIDEO_ENDPOINT = 'https://www.googleapis.com/youtube/v3/videos';
 const PLAYLIST_ENDPOINT = 'https://www.googleapis.com/youtube/v3/playlistItems';
 const MAX_RESULTS = 250;
 const MAX_PER_PAGE = 50;    // Upper bound on results returned in a single youtube api requ
+const YT_DLP_CMD = 'yt-dlp';
 
 export interface YTSearchResult {
   name: string;
@@ -247,35 +247,69 @@ export async function playlistToVideos(playlistId: string, key: string): Promise
 
 
 export async function download(songId: string, path?: string): Promise<Readable> {
-  let download: Readable;
+  let downloadProcess: ChildProcess;
+  let stderr = '';
+  const args = [
+    '-x',
+    '--audio-format', 'mp3',
+    '--force-overwrites',
+    '--no-playlist',
+    '--output', `${path ? `${path}.mp3` : '-'}`,
+    `https://www.youtube.com/watch?v=${songId}`
+  ];
+
   try {
-    download = ytdl(songId, { filter: 'audioonly' });
+    downloadProcess = spawn(YT_DLP_CMD, args, { stdio: ['ignore', `${path ? 'ignore' : 'pipe'}`, 'pipe'], timeout: 60000 });
   } catch(err) {
     logConsole({ msg: `ytdl error while downloading: ${err}` })
     throw(err)
   }
 
-  if(!path) return download as ReadStream;
-  let f: FileHandle;
+  downloadProcess.stderr?.on('data', (data) => {
+    stderr += data.toString();
+  })
 
-  try {
-    f = await open(path, 'w+');
-  } catch(err) {
-    logConsole({ msg: `Error opening ${path} - ${err}`, type: LogType.Error })
+  if(!path) {
+    if (!downloadProcess.stdout) {
+       throw new Error('No stdout from yt-dlp process');
+    }
+    
+    // Forward process errors to the stream so the consumer can handle them
+    downloadProcess.on('error', (err) => {
+      downloadProcess.stdout?.emit('error', err);
+    });
+
+    // If the process exits with an error later, we need to emit that on the stream
+    // so the consumer knows the stream is incomplete/failed.
+    downloadProcess.on('close', (code) => {
+      if (code !== 0) {
+        downloadProcess.stdout?.emit('error', new Error(`yt-dlp exited with code ${code}: ${stderr}`));
+      }
+    });
+    
+    return downloadProcess.stdout;
   }
-  
+
   return new Promise((resolve, reject) => {
-    if(!f) reject(null);
-    download.on('data', (chunk) => {
-      appendFileSync(path, chunk);
+    downloadProcess.on('error', (err) => {
+      reject(err);
     });
-    download.once('end', () => {
-      resolve(f.createReadStream({autoClose: true}));
-    });
-    download.on('error', (err) => {
-      logConsole({ msg: `${err}`, type: LogType.Error });
-      f.close();
-      reject(null);
+
+    downloadProcess.on('close', async (code) => {
+      if(code !== 0) {
+        logConsole({ msg: `ytdl process exited with code ${code}`, type: LogType.Error });
+        logConsole({ msg: `stderr: ${stderr}`, type: LogType.Error });
+        reject(new Error(`yt-dlp exited with code ${code}`));
+      } else {
+        try {
+          const f = await open(`${path}.mp3`, 'r');
+          const stream = f.createReadStream();
+          resolve(stream);
+        } catch(err) {
+          logConsole({ msg: `Error creating read stream for ${path} - ${err}`, type: LogType.Error });
+          reject(err);
+        }
+      }
     });
   })
 }

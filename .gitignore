@@ -3,3 +3,4 @@ built
 container/.vars
 .vscode
 testing
+archive/**

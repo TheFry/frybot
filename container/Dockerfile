@@ -1,6 +1,6 @@
 FROM node:24.12-alpine AS base
 WORKDIR /app
-RUN apk add --no-cache ffmpeg python3 alpine-sdk
+RUN apk add --no-cache ffmpeg python3 alpine-sdk yt-dlp
 COPY package.json package-lock.json tsconfig.json ./
 RUN npm ci
 
