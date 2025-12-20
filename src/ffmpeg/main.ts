@@ -9,10 +9,9 @@ import { newClient } from "../helpers/redis";
 import { LogType, logConsole } from "../helpers/logger";
 
 async function clip(job: ClipJob) {
-  const link = `https://youtube.com/watch?v=${job.video.id}`;
   const rawPath = `${MEDIA_DIR}/${randomBytes(8).toString('base64url')}`;
   const outputPath = `${MEDIA_DIR}/${randomBytes(8).toString('base64url')}.mp3`;
-  const ytStream = await yt.download(link, rawPath);
+  const ytStream = await yt.download(job.video.id, rawPath);
 
   logConsole({ msg: `Processing ${job}` })
   ffmpeg(ytStream)
