@@ -1,4 +1,4 @@
-import ffmpeg from 'fluent-ffmpeg';
+import { ffmpeg } from '../helpers/ffmpeg-wrapper';
 import { randomBytes } from 'crypto';
 import { INTERACTION_QUEUE_KEY, CLIP_QUEUE_KEY, ClipJob, MEDIA_DIR } from "../helpers/common";
 import { dequeue, enqueue } from "../helpers/message_queue";
@@ -13,36 +13,38 @@ async function clip(job: ClipJob) {
   const outputPath = `${MEDIA_DIR}/${randomBytes(8).toString('base64url')}.mp3`;
   const ytStream = await yt.download(job.video.id, rawPath);
 
-  logConsole({ msg: `Processing ${job}` })
-  ffmpeg(ytStream)
-    .setStartTime(job.startTime)
-    .setDuration(job.duration)
-    .output(outputPath)
-    .on('end', async () => {
-      logConsole({ msg: 'Trimming and limiting size complete' });
-      const message: DiscordResponse = {
-        content: 'Here is your file',
-        files: [outputPath],
-        interactionId: job.interactionId,
-      }
-      await enqueue(INTERACTION_QUEUE_KEY, [message]);
+  let responseMessage: DiscordResponse | null = null;
+  try {
+    await ffmpeg({
+      input: ytStream,
+      inputArgs: ['-ss', job.startTime, '-t', job.duration.toString()],
+      outputArgs: ['-codec', 'copy'],
+      output: outputPath,
+    });
+    logConsole({ msg: 'Trimming and limiting size complete' });
+    responseMessage = {
+      content: 'Here is your file',
+      files: [outputPath],
+      interactionId: job.interactionId,
+    }
+  } catch (err) {
+    responseMessage = {
+      content: 'Error trimming file.',
+      interactionId: job.interactionId,
+    }
+    logConsole({ msg: `Error trimming and limiting size of MP3: ${err}`, type: LogType.Error });
+  } finally {
+    const response = await enqueue(INTERACTION_QUEUE_KEY, [responseMessage]);
+    try {
+      rmSync(outputPath);
       rmSync(rawPath);
-    })
-    .on('error', async (err : Error) => {
-      logConsole({ msg: `Error trimming and limiting size of MP3: ${err}`, type: LogType.Error });
-      const message: DiscordResponse = {
-        content: 'Error trimming file.',
-        interactionId: job.interactionId,
-      }
-      await enqueue(INTERACTION_QUEUE_KEY, [message]);
-      try {
-        rmSync(outputPath);
-        rmSync(rawPath);
-      } catch {
-        // TODO: handle failed file removal
-       }
-    })
-    .run();
+    } catch {
+      logConsole({ msg: `Error cleaning up temp files: ${rawPath}, ${outputPath}`, type: LogType.Error });  
+    }
+    if(response[0].error) {
+      logConsole({ msg: `Enqueue response for interaction ${job.interactionId}: ${JSON.stringify(response[0])}` });
+    }
+  }
 }
 
 
