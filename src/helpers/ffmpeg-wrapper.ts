@@ -36,11 +36,19 @@ export function ffmpeg(options: FfmpegOptions): Promise<string> | Readable {
 
   const ffmpegProcess = spawn('ffmpeg', args, {
     stdio: [
-      typeof input === 'string' ? 'ignore' : input,
-      output ? 'ignore' : outputStream,
+      typeof input === 'string' ? 'ignore' : 'pipe',
+      output ? 'ignore' : 'pipe',
       'pipe'
     ]
   });
+
+  if (typeof input !== 'string' && ffmpegProcess.stdin) {
+    input.pipe(ffmpegProcess.stdin);
+  }
+
+  if (!output && outputStream && ffmpegProcess.stdout) {
+    ffmpegProcess.stdout.pipe(outputStream);
+  }
 
   let stderr = '';
   ffmpegProcess.stderr?.on('data', (data) => {

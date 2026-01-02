@@ -7,7 +7,7 @@ import { VoiceBot } from '../voice_bot/VoiceBot';
 import { AudioPlayer, AudioPlayerStatus, createAudioResource, EndBehaviorType, entersState, getVoiceConnection, VoiceConnection, VoiceReceiver } from '@discordjs/voice';
 import { Readable } from 'stream';
 import { OpusEncoder } from "@discordjs/opus";
-import { getClient, textToSpeechSocket, getRealTimeSTT } from '../helpers/eleven';
+import { getClient, textToSpeechSocket, getRealTimeSTT, PersistentSTTConnection } from '../helpers/eleven';
 import { search as ytSearch } from '../helpers/youtube';
 import { ConverseStreamOutput } from '@aws-sdk/client-bedrock-runtime';
 const DC_CLIENT = process.env['DC_CLIENT'] || '';
@@ -17,6 +17,7 @@ import { redisClient } from '../helpers/redis';
 import { FREE_CHANNELS_KEY, WATCHED_CHANNELS_KEY } from '../helpers/common';
 import { ffmpeg } from '../helpers/ffmpeg-wrapper';
 import { setTimeout } from 'timers/promises';
+import { log } from 'console';
 
 
 
@@ -151,7 +152,7 @@ async function websocketTTS(chatbot: BedRockChatBot, text: string, voicePlayer: 
 // }
 
 
-async function decodeVoiceStream(voiceReceiver: VoiceReceiver, sttStream: RealtimeConnection, member: GuildMember, i: number): Promise<string> {
+async function decodeVoiceStream(voiceReceiver: VoiceReceiver, sttStream: PersistentSTTConnection, member: GuildMember, i: number): Promise<string> {
   const voiceSub = voiceReceiver.subscribe(member.id, { end: { behavior: EndBehaviorType.AfterInactivity, duration: 1500 } });
   const decodedStream = new Readable({ read(){} });
   const decodedRate = 48000;
@@ -172,6 +173,7 @@ async function decodeVoiceStream(voiceReceiver: VoiceReceiver, sttStream: Realti
   await new Promise<void>(async (resolve, reject) => {
     const transcriptListener = (transcript: any) => {
       console.log("Committed transcript", transcript);
+      logConsole({ msg: `Committed transcript: ${transcript.text}` });
       response += transcript.text + " "; // Append text correctly
       // Only resolve if we have already committed (stream ended)
       if(completed) {
@@ -191,6 +193,7 @@ async function decodeVoiceStream(voiceReceiver: VoiceReceiver, sttStream: Realti
 
     outputStream.on('end', async () => {
       await setTimeout(500); // Wait a bit to ensure all audio is processed
+      logConsole({ msg: `FFMPEG finished` });
       completed = true;
       await sttStream.commit(); // Await the commit
     })
@@ -200,6 +203,7 @@ async function decodeVoiceStream(voiceReceiver: VoiceReceiver, sttStream: Realti
     });
 
     voiceSub.on('end', () => {
+      logConsole({ msg: `Voice stream ended for user ${member.user.username} (${member.id})` });
       decodedStream.push(null);
     });
   });
@@ -237,19 +241,21 @@ async function listenAndProcessAudio(member: GuildMember, thread: PublicThreadCh
   const websocket = await textToSpeechSocket(process.env['ELEVEN_LABS_KEY'] || '');
   while (true) {
     const text = await decodeVoiceStream(voiceReceiver, sttStream, member, i);
-    if(text === '') {
-      continue;
-    } else if(text.toLowerCase().includes('stop voice')) {
-      voicePlayer.stop();
-      const connection = getVoiceConnection(thread.guildId);
-      if(connection) {
-        connection.disconnect();
-        connection.destroy();
-      }
-      thread.send('Goodbye!');
-      break;
-    }
-    const intent = await chatbot.determineIntent(text);
+    logConsole({ msg: `Transcribed text: ${text}` });
+    i++;
+    // if(text === '') {
+    //   continue;
+    // } else if(text.toLowerCase().includes('stop voice')) {
+    //   voicePlayer.stop();
+    //   const connection = getVoiceConnection(thread.guildId);
+    //   if(connection) {
+    //     connection.disconnect();
+    //     connection.destroy();
+    //   }
+    //   thread.send('Goodbye!');
+    //   break;
+    // }
+    // const intent = await chatbot.determineIntent(text);
     // if(intent.intent === 'music_command') {
     //   const result = (await ytSearch(intent.song, 1, 'video', process.env['YT_TOKEN'] || ''))[0];
     //   const channelId = member.voice.channelId as string;
