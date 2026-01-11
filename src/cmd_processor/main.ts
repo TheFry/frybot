@@ -6,7 +6,7 @@ import { newClient as newRedisClient } from '../helpers/redis';
 import { dequeue } from '../helpers/message_queue';
 import { rmSync } from 'fs';
 import { LogType, logConsole } from '../helpers/logger';
-import { startProcessing } from './process-chats';
+import { processChatMessages } from '../chat_bot/main';
 
 
 checkVars();
@@ -28,7 +28,7 @@ client.once('clientReady', async () => {
   logConsole({ msg: 'Client logged in!' });
   await newRedisClient();
   client.commands = new Collection();
-  startProcessing(client)
+  processChatMessages(client);
   loadCommands(client, DC_TOKEN, DC_CLIENT, '../cmd_processor/commands', G_ID);
   respond();
 });
