@@ -24,7 +24,7 @@ import { getClient as getElevenClient, getRealTimeSTT, textToSpeechSocket } from
 
 
 export async function decodeVoiceStream(voiceReceiver: VoiceReceiver, sttStream: PersistentSTTConnection, member: GuildMember, i: number): Promise<string> {
-  const voiceSub = voiceReceiver.subscribe(member.id, { end: { behavior: EndBehaviorType.AfterInactivity, duration: 1500 } });
+  const voiceSub = voiceReceiver.subscribe(member.id, { end: { behavior: EndBehaviorType.AfterInactivity, duration: 800 } });
   const decodedStream = new Readable({ read(){} });
   const decodedRate = 48000;
   const decodedChannels = 2;
@@ -171,6 +171,7 @@ export async function listenAndProcessAudio(member: GuildMember, thread: PublicT
   const websocket = await textToSpeechSocket(process.env['ELEVEN_LABS_KEY'] || '');
   while (true) {
     const text = await decodeVoiceStream(voiceReceiver, sttStream, member, i);
+    if(text.trim() === '') continue;
     logConsole({ msg: `Transcribed text: ${text}` });
     i++;
 
