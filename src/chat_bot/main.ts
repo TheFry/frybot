@@ -62,10 +62,8 @@ async function findImages(attachments: Collection<Snowflake, Attachment>) : Prom
 
 
 async function newThreadMessage(thread: PublicThreadChannel, message: Message, chatbot: BedRockChatBot, chatType: ChatType) {
-  thread.sendTyping();
-
   if(chatType === ChatType.VoiceChat) {
-    if(message.content === 'stop-voice') {
+    if(message.content.toLowerCase() === 'stop-voice') {
       const voiceConnection = getVoiceConnection(thread.guildId);
       if(voiceConnection) {
         voiceConnection.disconnect();
@@ -76,8 +74,8 @@ async function newThreadMessage(thread: PublicThreadChannel, message: Message, c
     }
     return;
   }
-
-  if(message.content === 'stop-chat') {
+  thread.sendTyping();
+  if(message.content.toLowerCase() === 'stop-chat') {
     thread.send('Goodbye!');
     return false;
   }
