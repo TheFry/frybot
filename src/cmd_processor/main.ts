@@ -81,7 +81,7 @@ async function respond() {
       continue;
     }
     const interaction = interactions[interactionId];
-    if(interactions) {
+    if(interaction) {
       if(interaction.isChatInputCommand() || interaction.isModalSubmit()) {
         try {
           if(interaction.replied) {

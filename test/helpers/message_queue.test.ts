@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { enqueue, dequeue, EnqueueResponse } from '../../src/helpers/message_queue';
 import { newClient } from '../../src/helpers/redis';
 import { setTimeout } from 'timers';
@@ -113,6 +113,23 @@ describe('Message Queue Tests', () => {
       expect(deq.message).toEqual(expected?.message);
     }
   }, 10000)
+
+  it('returns error response when JSON is corrupt instead of throwing', async () => {
+    await enqueue(queueKey, [{ test: 'data' }]);
+
+    const spy = jest.spyOn(JSON, 'parse').mockImplementationOnce(() => {
+      throw new SyntaxError('Unexpected token x in JSON');
+    });
+
+    try {
+      const results = await dequeue(queueKey, 1);
+      expect(results).toHaveLength(1);
+      expect(results[0].error).toContain('JSON parse error');
+      expect(results[0].message).toBeUndefined();
+    } finally {
+      spy.mockRestore();
+    }
+  })
 
   it.each(messageCases)('blocks for new messages and times out with no results', async count => {
     const messages: unknown[] = [];

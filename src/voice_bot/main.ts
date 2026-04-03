@@ -101,11 +101,26 @@ async function reserveChannels(redisClient: Redis) {
     }
   }
 
+  const freeChannelsClient = redisClient.duplicate();
+  freeChannelsClient.on('error', err => logConsole({ msg: `Redis freeChannelsClient error - ${err}`, type: LogType.Error }));
   while(watchQueues) {
-    const response = await redisClient.duplicate().brpop(FREE_CHANNELS_KEY, 0);
+    let response;
+    try {
+      response = await freeChannelsClient.brpop(FREE_CHANNELS_KEY, 0);
+    } catch(err) {
+      logConsole({ msg: `freeChannelsClient brpop error - ${err}`, type: LogType.Error });
+      continue;
+    }
     if(!response) continue;  // Make typescript happy. This should always return something
     const channelId = response[1];
-    const wasAdded = await redisClient.sadd(WATCHED_CHANNELS_KEY, channelId);
+    let wasAdded;
+    try {
+      wasAdded = await redisClient.sadd(WATCHED_CHANNELS_KEY, channelId);
+    } catch(err) {
+      logConsole({ msg: `sadd error for channel ${channelId} - ${err}`, type: LogType.Error });
+      await releaseChannel(channelId);
+      continue;
+    }
 
     // Handle race condition where free-channels contains 2 entries for channelId
     // Another bot may simultaneously try to add channelId to the watched-queues set. 
