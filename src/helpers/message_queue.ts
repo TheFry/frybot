@@ -111,7 +111,8 @@ export async function dequeue(queueKey: string, count: number, timeout?: number)
       try {
         message = JSON.parse(jsonRes as string);
       } catch(parseErr) {
-        responses.push({ uuid, error: `JSON parse error - ${parseErr}` });
+        const parseErrorString = `JSON parse error - ${parseErr}`;
+        responses.push({ uuid, error: errorString === '' ? parseErrorString : `${errorString}\n${parseErrorString}` });
         count--;
         continue;
       }
