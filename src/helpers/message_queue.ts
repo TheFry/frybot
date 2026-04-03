@@ -107,9 +107,17 @@ export async function dequeue(queueKey: string, count: number, timeout?: number)
       if(jsonErr) errorString += `dequeue JSON.GET error for entryKey ${entryKey} - ${jsonErr}\n`;
       if(delErr) errorString += `dequeue del error for entryKey ${entryKey} - ${delErr}`;
 
+      let message;
+      try {
+        message = JSON.parse(jsonRes as string);
+      } catch(parseErr) {
+        responses.push({ uuid, error: `JSON parse error - ${parseErr}` });
+        count--;
+        continue;
+      }
       responses.push({
         uuid: uuid,
-        message: JSON.parse(jsonRes as string),
+        message: message,
         error: errorString === '' ? undefined : errorString
       })
     } else {

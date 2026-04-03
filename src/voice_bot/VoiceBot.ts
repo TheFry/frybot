@@ -166,10 +166,15 @@ export class VoiceBot {
             await this.playNext();
           } catch(err) {
             logConsole({ msg: `Failed playing song - ${err}`, type: LogType.Error });
-            this.cleanupAudio();
-            await this.releaseChannel(true);
-          } 
-          await this.resourceLock.release();
+            try {
+              this.cleanupAudio();
+              await this.releaseChannel(true);
+            } catch(cleanupErr) {
+              logConsole({ msg: `Cleanup also failed - ${cleanupErr}`, type: LogType.Error });
+            }
+          } finally {
+            this.resourceLock.release();
+          }
           break;
         case AudioPlayerStatus.Buffering:
           logConsole({ msg: 'Was buffering or something', type: LogType.Error });

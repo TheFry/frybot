@@ -101,8 +101,9 @@ async function reserveChannels(redisClient: Redis) {
     }
   }
 
+  const freeChannelsClient = redisClient.duplicate();
   while(watchQueues) {
-    const response = await redisClient.duplicate().brpop(FREE_CHANNELS_KEY, 0);
+    const response = await freeChannelsClient.brpop(FREE_CHANNELS_KEY, 0);
     if(!response) continue;  // Make typescript happy. This should always return something
     const channelId = response[1];
     const wasAdded = await redisClient.sadd(WATCHED_CHANNELS_KEY, channelId);
