@@ -102,6 +102,7 @@ async function reserveChannels(redisClient: Redis) {
   }
 
   const freeChannelsClient = redisClient.duplicate();
+  freeChannelsClient.on('error', err => logConsole({ msg: `Redis freeChannelsClient error - ${err}`, type: LogType.Error }));
   while(watchQueues) {
     const response = await freeChannelsClient.brpop(FREE_CHANNELS_KEY, 0);
     if(!response) continue;  // Make typescript happy. This should always return something
