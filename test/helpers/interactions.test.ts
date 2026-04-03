@@ -2,7 +2,6 @@ import { describe, expect, it, jest, beforeEach, afterEach } from '@jest/globals
 import { addInteraction, interactions } from '../../src/helpers/interactions';
 import { BaseInteraction } from 'discord.js';
 
-const INTERACTION_TIMEOUT_MS = 1000 * 825;
 const CLEARLY_EXPIRED_TIMESTAMP = Date.now() - 1e9;
 
 function mockInteraction(id: string, createdTimestamp: number): BaseInteraction {
