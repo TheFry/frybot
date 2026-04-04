@@ -1,50 +1,8 @@
-import ffmpeg from 'fluent-ffmpeg';
-import { randomBytes } from 'crypto';
-import { INTERACTION_QUEUE_KEY, CLIP_QUEUE_KEY, ClipJob, MEDIA_DIR } from "../helpers/common";
-import { dequeue, enqueue } from "../helpers/message_queue";
-import * as yt from '../helpers/youtube';
-import { DiscordResponse } from "../helpers/interactions";
-import { rmSync } from "fs";
+import { CLIP_QUEUE_KEY, ClipJob } from "../helpers/common";
+import { dequeue } from "../helpers/message_queue";
 import { newClient } from "../helpers/redis";
 import { LogType, logConsole } from "../helpers/logger";
-
-async function clip(job: ClipJob) {
-  const rawPath = `${MEDIA_DIR}/${randomBytes(8).toString('base64url')}`;
-  const outputPath = `${MEDIA_DIR}/${randomBytes(8).toString('base64url')}.mp3`;
-  const ytStream = await yt.download(job.video.id, rawPath);
-
-  logConsole({ msg: `Processing ${job}` })
-  ffmpeg(ytStream)
-    .setStartTime(job.startTime)
-    .setDuration(job.duration)
-    .output(outputPath)
-    .on('end', async () => {
-      logConsole({ msg: 'Trimming and limiting size complete' });
-      const message: DiscordResponse = {
-        content: 'Here is your file',
-        files: [outputPath],
-        interactionId: job.interactionId,
-      }
-      await enqueue(INTERACTION_QUEUE_KEY, [message]);
-      rmSync(rawPath);
-    })
-    .on('error', async (err : Error) => {
-      logConsole({ msg: `Error trimming and limiting size of MP3: ${err}`, type: LogType.Error });
-      const message: DiscordResponse = {
-        content: 'Error trimming file.',
-        interactionId: job.interactionId,
-      }
-      await enqueue(INTERACTION_QUEUE_KEY, [message]);
-      try {
-        rmSync(outputPath);
-        rmSync(rawPath);
-      } catch {
-        // TODO: handle failed file removal
-       }
-    })
-    .run();
-}
-
+import { clip, validateClipJob } from "./clip";
 
 async function main() {
   const watch = true;
@@ -52,18 +10,12 @@ async function main() {
   while(watch) {
     const res = (await dequeue(CLIP_QUEUE_KEY, 1, 0))[0];
     if(res && res.error) {
-      logConsole({ msg: `Error dequeueing from interaction queue - ${res.error}`, type: LogType.Error });
+      logConsole({ msg: `Error dequeueing from clip jobs queue - ${res.error}`, type: LogType.Error });
       continue;
     }
 
-    const message = res.message as ClipJob;
-    if(!message ||
-      !message.duration || 
-      !message.interactionId || 
-      !message.startTime || 
-      !message.video) 
-    {
-      logConsole({ msg: `Error dequeueing from interaction queue - invalid message object\n${res}`, type: LogType.Error });
+    if(!validateClipJob(res.message)) {
+      logConsole({ msg: `Error dequeueing from clip jobs queue - invalid message object\n${res}`, type: LogType.Error });
       continue;
     }
 

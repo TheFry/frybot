@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
-import { List } from '../../src/helpers/list';
+import { List } from '../../../src/helpers/list';
 import { setTimeout } from 'timers/promises';
 
 
 function loadList(num: number, list: List<number>, func: 'lpush' | 'rpush' = 'lpush') {
   for(let i = 0; i < num; i++) {
     list[func](i);
-  } 
+  }
 }
 
 const testLists = [
@@ -26,7 +26,7 @@ const asyncCases = [
 describe('List Tests', () => {
   let list: List<number> = new List();
 
-  beforeEach(() => { 
+  beforeEach(() => {
     list = new List();
   })
 
@@ -137,4 +137,14 @@ describe('List Tests', () => {
     expect(actual).toBe(null);
     expect(elapsed).toBe(0);
   })
+
+  it('listAll does not throw on an empty list', () => {
+    expect(() => list.listAll()).not.toThrow();
+  });
+
+  it('listAll does not throw on a populated list', () => {
+    list.lpush(1);
+    list.lpush(2);
+    expect(() => list.listAll()).not.toThrow();
+  });
 })

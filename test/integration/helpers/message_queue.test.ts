@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { enqueue, dequeue, EnqueueResponse } from '../../src/helpers/message_queue';
-import { newClient } from '../../src/helpers/redis';
+import { enqueue, dequeue, EnqueueResponse } from '../../../src/helpers/message_queue';
+import { newClient } from '../../../src/helpers/redis';
 import { setTimeout } from 'timers';
 import { setTimeout as setTimeoutPromise } from 'timers/promises'
 import { Redis } from 'ioredis';
-import { hasProperties } from '../../src/helpers/common';
+import { hasProperties } from '../../../src/helpers/common';
 
 const messageCases = [1, 3, 5, 10]
 const queueKey = 'test_queue'
@@ -18,7 +18,7 @@ describe('Message Queue Tests', () => {
     await dequeue(queueKey, -1);
     client.disconnect();
   });
-  
+
   it.each(messageCases)('enqueues %i messages at a time', async count => {
     const messages: unknown[] = [];
     for(let i = 0; i < count; i++) {
@@ -146,4 +146,3 @@ describe('Message Queue Tests', () => {
     await enqueue(queueKey, messages);
   }, 10000)
 })
-

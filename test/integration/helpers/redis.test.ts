@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { newClient, redisClient } from '../../src/helpers/redis';
+import { newClient, redisClient } from '../../../src/helpers/redis';
 import { Redis } from 'ioredis';
 
 
@@ -15,5 +15,5 @@ describe('Redis connection tests', () => {
     await redisClient?.set(TEST_KEY, TEST_VALUE);
     expect(await redisClient?.get(TEST_KEY)).toBe(TEST_VALUE);
     await redisClient?.disconnect();
-  }) 
+  })
 })
