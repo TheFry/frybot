@@ -25,6 +25,11 @@
     "typescript": "^5.8.2"
   },
   "scripts": {
-    "dev": "DEBUG=1 npx nodemon ./src/main.ts"
+    "dev": "DEBUG=1 npx nodemon ./src/main.ts",
+    "test": "npx jest",
+    "test:unit": "npx jest --selectProjects unit",
+    "test:integration": "npx jest --selectProjects integration",
+    "test:e2e": "npx jest --selectProjects e2e",
+    "test:coverage": "npx jest --coverage"
   }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it, jest, beforeEach, afterEach } from '@jest/globals';
-import { addInteraction, interactions } from '../../src/helpers/interactions';
+import { addInteraction, interactions } from '../../../src/helpers/interactions';
 import { BaseInteraction } from 'discord.js';
 
 const CLEARLY_EXPIRED_TIMESTAMP = Date.now() - 1e9;

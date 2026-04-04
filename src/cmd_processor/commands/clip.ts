@@ -126,7 +126,7 @@ async function getSelection(interaction: ChatInputCommandInteraction, query: str
         if(i + 1 < searchData.length) {
           await button.update({ content: `https://www.youtube.com/watch?v=${searchData[i + 1].id}`, components: rows });
         } else {
-          await interaction.editReply({ content: 'No video selected. Try a differnt search or use a direct url', components: [] });
+          await interaction.editReply({ content: 'No video selected. Try a different search or use a direct url', components: [] });
           return null;
         }
       } else if(button.customId == "select") {
@@ -142,10 +142,7 @@ async function getSelection(interaction: ChatInputCommandInteraction, query: str
     }
   }
 
-  if(selectedVideo && button) {
-    return [selectedVideo, button];
-  }
-  return null;
+  return [selectedVideo!, button!];
 }
 
 
@@ -188,7 +185,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
     }
     
     if(checkedErr && checkedErr.code === 'ERR_INVALID_URL') {
-      await interaction.reply({ content: `Searcing youtube for ${q}` });
+      await interaction.reply({ content: `Searching youtube for ${q}` });
       const res = await getSelection(interaction, q);
       if(!res) return;
       selection = res[0];

@@ -78,7 +78,7 @@ export function hasProperties(object: unknown, properties: string | string[], re
     let missing = false;
     for(let i = 0; i < levels.length; i++) {
       if(typeof tempObj !== 'object' || tempObj === null) {
-        missing = i >= levels.length ? false : true;
+        missing = true;
         break;
       }
       if(levels[i] in tempObj) {

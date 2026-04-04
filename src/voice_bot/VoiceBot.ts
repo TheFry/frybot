@@ -200,7 +200,7 @@ export class VoiceBot {
     promises.push(getSong(this.channelId, skip ? -1 : this.idleTimeout));
     promises.push(once(this.cancelWatch, CANCEL_WATCH_EVENT));
     const event = await Promise.race(promises);
-    if(event === CANCEL_WATCH_EVENT) {
+    if(Array.isArray(event)) {
       logConsole({ msg: `playNext cancel event on channel ${this.channelId}`});
       return;
     }

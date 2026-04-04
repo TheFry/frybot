@@ -58,7 +58,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   const next = interaction.options.getBoolean('next') || false;
   const member = interaction.member as GuildMember;
   const channelId = member.voice.channelId;
-  await interaction.reply({ content: `Searcing youtube for ${q}` });
+  await interaction.reply({ content: `Searching youtube for ${q}` });
   
   if(!channelId) {
     await interaction.editReply('You must be in a voice channel to play music!');
