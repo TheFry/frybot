@@ -2,10 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  // Only lint TypeScript source files
-  { files: ['src/**/*.ts', 'test/**/*.ts'] },
-
-  // Ignore compiled output and dependencies
+  // Ignore compiled output, dependencies, and files not part of the app
   {
     ignores: [
       'built/**',
@@ -17,13 +14,21 @@ export default tseslint.config(
     ],
   },
 
-  // ESLint's core recommended rules (catches common JS bugs)
-  js.configs.recommended,
-
-  // TypeScript-specific recommended rules (type-aware linting)
-  ...tseslint.configs.recommended,
-
+  // All rules are scoped to TypeScript files only. The `files` property
+  // here is on the same config object as the rules/extends, which is the
+  // correct way to scope in flat config — a standalone { files: [...] }
+  // object does NOT scope subsequent config objects in the array.
   {
+    files: ['**/*.ts'],
+
+    extends: [
+      // ESLint's core recommended rules (catches common JS bugs)
+      js.configs.recommended,
+
+      // TypeScript-specific recommended rules
+      ...tseslint.configs.recommended,
+    ],
+
     rules: {
       // ---------------------------------------------------------------
       // Correctness
