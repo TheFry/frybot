@@ -51,23 +51,26 @@ export function timeConverter(time : string): TimeConverterReturn {
   let minutes = '00';
   let seconds = '00';
 
+  const isDigits = (s: string) => /^\d+$/.test(s);
+
   const parts = time.split(':');
-  if(parts.length === 1) {
+  if(parts.length === 1 && isDigits(parts[0])) {
     // SS or S — seconds only
     seconds = parts[0].padStart(2, '0');
-  } else if(parts.length === 2) {
+  } else if(parts.length === 2 && parts.every(isDigits)) {
     // MM:SS or M:SS
     minutes = parts[0].padStart(2, '0');
     seconds = parts[1].padStart(2, '0');
-  } else if(parts.length >= 3) {
+  } else if(parts.length >= 3 && parts.every(isDigits)) {
     // HH:MM:SS or H:MM:SS
     hours = parts[0].padStart(2, '0');
     minutes = parts[1].padStart(2, '0');
     seconds = parts[2].padStart(2, '0');
   }
+  // Invalid input falls through, returning the 00:00:00 defaults
 
   const str = `${hours}:${minutes}:${seconds}`;
-  const num = parseInt(seconds) + parseInt(minutes) * 60 + parseInt(hours) * 60 * 60;
+  const num = Number.parseInt(seconds, 10) + Number.parseInt(minutes, 10) * 60 + Number.parseInt(hours, 10) * 60 * 60;
   return { str, num };
 }
 

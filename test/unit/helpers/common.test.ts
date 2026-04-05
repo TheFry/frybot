@@ -96,6 +96,15 @@ describe('timeConverter', () => {
     expect(timeConverter('1:30:00')).toEqual({ str: '01:30:00', num: 5400 });
     expect(timeConverter('9:59:59')).toEqual({ str: '09:59:59', num: 36000 - 1 });
   });
+
+  it('returns 00:00:00 fallback for non-numeric input', () => {
+    // Non-digit segments must not produce NaN in num (which would be passed to ffmpeg)
+    const fallback = { str: '00:00:00', num: 0 };
+    expect(timeConverter('abc')).toEqual(fallback);
+    expect(timeConverter('00:00:0x')).toEqual(fallback);
+    expect(timeConverter('1:30:xx')).toEqual(fallback);
+    expect(timeConverter('')).toEqual(fallback);
+  });
 });
 
 
