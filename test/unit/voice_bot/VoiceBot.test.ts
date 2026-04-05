@@ -237,8 +237,7 @@ describe('VoiceBot', () => {
       expect(mockDequeue).toHaveBeenCalledWith('discord:channel:ch-1:queue', -1);
       expect(mockSrem).toHaveBeenCalledWith('frybot:reserved-channels', 'ch-1');
       expect(voicebotList['ch-1']).toBeUndefined();
-      // Note: stop() deletes connectedGuilds[channelId], not connectedGuilds[guildId]
-      expect(connectedGuilds['ch-1']).toBeUndefined();
+      expect(connectedGuilds['guild-1']).toBeUndefined();
     });
   });
 
