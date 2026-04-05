@@ -2,7 +2,6 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@je
 import { enqueue, dequeue, EnqueueResponse } from '../../../src/helpers/message_queue';
 import { newClient } from '../../../src/helpers/redis';
 import { setTimeout } from 'timers';
-import { setTimeout as setTimeoutPromise } from 'timers/promises';
 import { Redis } from 'ioredis';
 import { hasProperties } from '../../../src/helpers/common';
 
