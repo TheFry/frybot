@@ -16,7 +16,7 @@ jest.mock('../../../src/helpers/logger', () => ({
   LogType: { Error: 1, Warn: 2, Debug: 3 },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const yt = require('../../../src/helpers/youtube') as typeof import('../../../src/helpers/youtube');
 
 function makeProcess(overrides: Record<string, unknown> = {}) {

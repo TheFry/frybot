@@ -8,7 +8,7 @@ export default async function setup() {
     await client.ping();
   } catch (err) {
     await client.disconnect();
-    throw new Error(`Integration tests require Redis at ${url}. Is it running?\n${err}`);
+    throw new Error(`Integration tests require Redis at ${url}. Is it running?`, { cause: err });
   }
   await client.disconnect();
 }

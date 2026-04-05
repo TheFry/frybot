@@ -10,7 +10,7 @@ jest.mock('../../../src/helpers/redis', () => ({
   newClient: jest.fn(),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { execute } = require('../../../src/cmd_processor/commands/pause') as {
   execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
 };
@@ -52,8 +52,8 @@ it('loads module without DEBUG set (covers false branch of DEBUG ternary)', () =
   const savedDebug = process.env['DEBUG'];
   delete process.env['DEBUG'];
   jest.isolateModules(() => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require(`../../../src/cmd_processor/commands/pause`);
+     
+    require('../../../src/cmd_processor/commands/pause');
   });
   if (savedDebug !== undefined) process.env['DEBUG'] = savedDebug;
 });

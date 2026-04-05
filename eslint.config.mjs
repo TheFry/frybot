@@ -83,4 +83,13 @@ export default tseslint.config(
       'no-console': 'off',
     },
   },
+
+  // Jest test files use require() for dynamic mocking (jest.mock() + jest.requireMock()).
+  // This is a standard Jest pattern that cannot be replaced with static `import`.
+  {
+    files: ['test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
 );

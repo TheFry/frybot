@@ -54,11 +54,11 @@ describe('hasProperties', () => {
       props: ['prop1', 'prop2.level1', 'prop3.level1.level2'],
       expected: ['prop2.level1']
     }
-  ]
+  ];
 
   it.each(propCases)('check for properties $props on obj $obj', ({ obj, props, expected }) => {
     expect(hasProperties(obj, props, true)).toEqual(expected);
-    expect(hasProperties(obj, props)).toBe(expected.length === 0 ? true : false)
+    expect(hasProperties(obj, props)).toBe(expected.length === 0);
   });
 
   it('accepts a single string property', () => {

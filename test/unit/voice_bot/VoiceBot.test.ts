@@ -1,5 +1,4 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { EventEmitter } from 'events';
 import { PlaylistEntry } from '../../../src/helpers/playlist';
 import { ChannelEvent } from '../../../src/helpers/common';
 
@@ -97,7 +96,7 @@ jest.mock('fs', () => ({
   rmSync: jest.fn(),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { VoiceBot, voicebotList, connectedGuilds } = require('../../../src/voice_bot/VoiceBot') as {
   VoiceBot: typeof import('../../../src/voice_bot/VoiceBot').VoiceBot;
   voicebotList: Record<string, unknown>;

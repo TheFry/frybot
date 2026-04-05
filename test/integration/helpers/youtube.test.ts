@@ -5,14 +5,14 @@ import { accessSync, rmSync } from 'fs';
 const YT_TOKEN = process.env['YT_TOKEN'] || '';
 const describeIfToken = YT_TOKEN ? describe : describe.skip;
 
-const testPlaylistQuery = 'Kanye - Late Registration'
-const testVideoQuery = 'Infected Mushroom - Walking on the Moon'
+const testPlaylistQuery = 'Kanye - Late Registration';
+const testVideoQuery = 'Infected Mushroom - Walking on the Moon';
 const searchCases = [
   { count: 5, type: 'video', query: testVideoQuery },
   { count: 5, type: 'playlist', query: testPlaylistQuery},
   { count: 51, type: 'video', query: testVideoQuery},
   { count: 51, type: 'playlist', query: testPlaylistQuery},
-]
+];
 
 const playlistCases = [
   {
@@ -41,7 +41,7 @@ const playlistCases = [
       { name: 'Late', id: 'YRwTaWWK3dI', type: 'video' }
     ]
   },
-]
+];
 
 const listCases = [
   {
@@ -49,12 +49,12 @@ const listCases = [
     list: playlistCases[0].videos,
     type: 'video'
   },
-]
+];
 
 const downloadCases = [
   { path: './testdl1.mp3', id: 'Bwyu-SZ7g_E' },
   { path: undefined, id: 'R6dH8iBHzb4' }
-]
+];
 
 
 describeIfToken('Youtube Helper Tests', () => {
@@ -65,18 +65,18 @@ describeIfToken('Youtube Helper Tests', () => {
       expect(result.type).toBe(type);
       expect(result.name).toBeDefined();
       expect(result.id).toBeDefined();
-    })
-  })
+    });
+  });
 
   it.each(playlistCases)('convert a playlist id $id to YTSearchResult[]', async ({id, videos}) => {
     const results = await yt.playlistToVideos(id, YT_TOKEN);
     expect(results).toEqual(videos);
-  })
+  });
 
   it.each(listCases)('return YTSearchResult[] of a list of $type ids', async ({ids, list, type}) => {
     const results = await yt.list(ids, type as 'video' | 'playlist', YT_TOKEN);
     expect(results).toEqual(list);
-  })
+  });
 
   it.each(downloadCases)('download/stream id $id and return read stream', async ({ id, path }) => {
     const stream = await yt.download(id, path);
@@ -85,5 +85,5 @@ describeIfToken('Youtube Helper Tests', () => {
       accessSync(`${path}.mp3`);
       rmSync(`${path}.mp3`);
     }
-  })
+  });
 });

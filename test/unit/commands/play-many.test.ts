@@ -28,7 +28,7 @@ jest.mock('../../../src/helpers/logger', () => ({
   LogType: { Error: 1, Warn: 2, Debug: 3 },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { execute } = require('../../../src/cmd_processor/commands/play-many') as {
   execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
 };
@@ -133,7 +133,7 @@ it('loads play-many module without DEBUG set (covers false branch of DEBUG terna
   const savedDebug = process.env['DEBUG'];
   delete process.env['DEBUG'];
   jest.isolateModules(() => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     require('../../../src/cmd_processor/commands/play-many');
   });
   if (savedDebug !== undefined) process.env['DEBUG'] = savedDebug;
