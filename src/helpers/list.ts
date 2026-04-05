@@ -1,8 +1,8 @@
-import { E_CANCELED, Mutex } from "async-mutex";
-import { EventEmitter, once } from "events";
-import { setTimeout } from "timers";
-import { LogType, logConsole } from "./logger";
-import { hasProperties } from "./common";
+import { E_CANCELED, Mutex } from 'async-mutex';
+import { EventEmitter, once } from 'events';
+import { setTimeout } from 'timers';
+import { LogType, logConsole } from './logger';
+import { hasProperties } from './common';
 
 const PUSH_EVENT = 'push';
 const CANCEL_EVENT = 'cancel';
@@ -108,8 +108,8 @@ export class List<T> {
       event = (await listener)[0];
     } catch(err) {
       if(hasProperties(err, 'code')) {
-        const checked = err as { [code: string]: unknown }
-        if(checked.code !== 'ABORT_ERR') throw err
+        const checked = err as { [code: string]: unknown };
+        if(checked.code !== 'ABORT_ERR') throw err;
       }
       event = CANCEL_EVENT;
     }

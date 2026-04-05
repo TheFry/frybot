@@ -138,12 +138,12 @@ async function request(url: string, params: unknown): Promise<SearchListResponse
   let res;
   try {
     res = await axios.get(url, {
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
       params
     });
   } catch(err) {
     if(hasProperties(err, ['response.data', 'response.status'])) {
-      const checked = err as { response: { data: unknown, status: unknown } }
+      const checked = err as { response: { data: unknown, status: unknown } };
       logConsole({ msg: `${JSON.stringify(checked.response.data)}`, type: LogType.Error });
       logConsole({ msg: `${checked.response.status}`, type: LogType.Error });
     } else {
@@ -178,7 +178,7 @@ export async function search(query: string, count: number, type: 'video' | 'play
         name: item.snippet.title,
         id: item.id.kind === 'youtube#video' ? item.id.videoId as string : item.id.playlistId as string,
         type: item.id.kind === 'youtube#video' ? 'video' : 'playlist'
-      })
+      });
       
       if(results.length >= count) {
         return results;
@@ -210,7 +210,7 @@ export async function list(ids: string[], type: 'video' | 'playlist', key: strin
         name: item.snippet.title,
         id: item.id,
         type: type
-      })
+      });
     }
   }
   return results;
@@ -238,9 +238,9 @@ export async function playlistToVideos(playlistId: string, key: string): Promise
         name: item.snippet.title,
         id: item.snippet.resourceId.videoId,
         type: 'video' 
-      }) 
+      }); 
     }
-    nextPage = data.nextPageToken ? true : false;
+    nextPage = !!data.nextPageToken;
   }
   return results;
 }
@@ -261,13 +261,13 @@ export async function download(songId: string, path?: string): Promise<Readable>
   try {
     downloadProcess = spawn(YT_DLP_CMD, args, { stdio: ['ignore', `${path ? 'ignore' : 'pipe'}`, 'pipe'], timeout: 60000 });
   } catch(err) {
-    logConsole({ msg: `ytdl error while downloading: ${err}` })
-    throw(err)
+    logConsole({ msg: `ytdl error while downloading: ${err}` });
+    throw(err);
   }
 
   downloadProcess.stderr?.on('data', (data) => {
     stderr += data.toString();
-  })
+  });
 
   if(!path) {
     if (!downloadProcess.stdout) {
@@ -311,5 +311,5 @@ export async function download(songId: string, path?: string): Promise<Readable>
         }
       }
     });
-  })
+  });
 }

@@ -1,8 +1,8 @@
-import { CLIP_QUEUE_KEY, ClipJob } from "../helpers/common";
-import { dequeue } from "../helpers/message_queue";
-import { newClient } from "../helpers/redis";
-import { LogType, logConsole } from "../helpers/logger";
-import { clip, validateClipJob } from "./clip";
+import { CLIP_QUEUE_KEY, ClipJob } from '../helpers/common';
+import { dequeue } from '../helpers/message_queue';
+import { newClient } from '../helpers/redis';
+import { LogType, logConsole } from '../helpers/logger';
+import { clip, validateClipJob } from './clip';
 
 async function main() {
   const watch = true;
@@ -29,5 +29,5 @@ async function main() {
 }
 
 newClient()
-  .then(() => { main() })
-  .catch(err => { logConsole({ msg: `${err}`, type: LogType.Error }); return 1; })
+  .then(() => { main(); })
+  .catch(err => { logConsole({ msg: `${err}`, type: LogType.Error }); return 1; });

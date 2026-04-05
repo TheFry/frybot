@@ -1,5 +1,5 @@
-import { Snowflake, TextChannel } from "discord.js";
-import { DiscordClient } from "./common";
+import { Snowflake, TextChannel } from 'discord.js';
+import { DiscordClient } from './common';
 
 const DEBUG_COLOR = '37';
 const WARN_COLOR = '33';

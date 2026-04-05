@@ -1,12 +1,12 @@
-import Redis, { Result, Callback } from "ioredis";
-import { readFileSync } from "fs";
-import { Snowflake } from "discord.js";
-import {  LogType, logConsole } from "./logger";
+import Redis, { Result, Callback } from 'ioredis';
+import { readFileSync } from 'fs';
+import { Snowflake } from 'discord.js';
+import {  LogType, logConsole } from './logger';
 
 const REDIS_URL = process.env['REDIS_URL'] || 'redis://localhost:6379';
 const REDIS_SCRIPT_DIR = './redis_scripts';
 
-declare module "ioredis" {
+declare module 'ioredis' {
   interface RedisCommander<Context> {
     enqueue(
       queueKey: string,
@@ -29,17 +29,17 @@ declare module "ioredis" {
 export let redisClient: Redis | null = null;
 
 export async function newClient(url: string = REDIS_URL) {
-  const newClient = new Redis(url)
+  const newClient = new Redis(url);
 
   newClient.defineCommand('enqueue', {
     numberOfKeys: 2,
     lua: readFileSync(`${REDIS_SCRIPT_DIR}/enqueue.lua`).toString()
-  })
+  });
 
   newClient.defineCommand('checkIfWatched', {
     numberOfKeys: 2,
     lua: readFileSync(`${REDIS_SCRIPT_DIR}/checkIfWatched.lua`).toString(),
-  })
+  });
 
   newClient.on('error', err => logConsole({msg: `Redis Client Error - ${err}`, type: LogType.Error}));
   redisClient = newClient;
