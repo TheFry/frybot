@@ -151,6 +151,17 @@ describe('VoiceBot', () => {
       expect(bot.lastPlayed).toBeNull();
     });
 
+    it('stores isConnected=false when explicitly passed false', () => {
+      const bot = new VoiceBot({
+        channelId: 'ch-3',
+        channelName: 'test',
+        guildId: 'guild-3',
+        audioResources: (createBot() as unknown as { audioResources: unknown }).audioResources,
+        isConnected: false,
+      } as unknown as ConstructorParameters<typeof VoiceBot>[0]);
+      expect(bot.isConnected).toBe(false);
+    });
+
     it('uses default idleTimeout of 30 when not provided (line 81 || branch)', () => {
       const bot = new VoiceBot({
         channelId: 'ch-2',
@@ -470,8 +481,9 @@ describe('VoiceBot', () => {
         (call: unknown[]) => call[0] === 'idle'
       )?.[1] as ((oldState: { status: string }) => Promise<void>) | undefined;
 
+      expect(idleHandler).toBeDefined();
       // Should not throw — error is caught inside the handler
-      await expect(idleHandler?.({ status: 'playing' })).resolves.toBeUndefined();
+      await expect(idleHandler!({ status: 'playing' })).resolves.toBeUndefined();
       expect(mockPlayerStop).toHaveBeenCalled();
     });
 
@@ -485,8 +497,9 @@ describe('VoiceBot', () => {
         (call: unknown[]) => call[0] === 'idle'
       )?.[1] as ((oldState: { status: string }) => Promise<void>) | undefined;
 
+      expect(idleHandler).toBeDefined();
       // Should still not throw — nested catch handles the cleanup error
-      await expect(idleHandler?.({ status: 'playing' })).resolves.toBeUndefined();
+      await expect(idleHandler!({ status: 'playing' })).resolves.toBeUndefined();
     });
   });
 

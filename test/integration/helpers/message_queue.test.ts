@@ -2,7 +2,6 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@je
 import { enqueue, dequeue, EnqueueResponse } from '../../../src/helpers/message_queue';
 import { newClient } from '../../../src/helpers/redis';
 import { setTimeout } from 'timers';
-import { setTimeout as setTimeoutPromise } from 'timers/promises';
 import { Redis } from 'ioredis';
 import { hasProperties } from '../../../src/helpers/common';
 
@@ -137,12 +136,9 @@ describe('Message Queue Tests', () => {
       messages.push({ name: `test ${i}`, id: i });
     }
 
-    dequeue(queueKey, count, 2)
-      .then(deqs => {
-        expect(deqs.length).toBe(0);
-      });
+    const deqs = await dequeue(queueKey, count, 2);
+    expect(deqs.length).toBe(0);
 
-    await setTimeoutPromise(5000);
     await enqueue(queueKey, messages);
   }, 10000);
 });
