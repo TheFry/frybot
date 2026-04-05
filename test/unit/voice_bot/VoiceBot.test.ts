@@ -481,8 +481,9 @@ describe('VoiceBot', () => {
         (call: unknown[]) => call[0] === 'idle'
       )?.[1] as ((oldState: { status: string }) => Promise<void>) | undefined;
 
+      expect(idleHandler).toBeDefined();
       // Should not throw — error is caught inside the handler
-      await expect(idleHandler?.({ status: 'playing' })).resolves.toBeUndefined();
+      await expect(idleHandler!({ status: 'playing' })).resolves.toBeUndefined();
       expect(mockPlayerStop).toHaveBeenCalled();
     });
 
