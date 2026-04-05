@@ -31,7 +31,6 @@ client.once('clientReady', async () => {
 async function reserveChannels(redisClient: Redis) {
   logConsole({ msg: `Looking for open channels...` });
   const coolDown = 5000; // How long to wait before looking for a new queue after failure
-  const watched_guilds: {[id: string]: string} = {};
 
   const releaseChannel = async(channelId: Snowflake) => {
     await redisClient.multi()
@@ -42,7 +41,7 @@ async function reserveChannels(redisClient: Redis) {
 
   const initChannel = async(channelId: Snowflake) => {
     const guildId = await redisClient.get(`discord:channel:${channelId}:guild-id`);
-    if(!guildId || watched_guilds[guildId]) {
+    if(!guildId || connectedGuilds[guildId]) {
       const errText = `Can't watch ${channelId} - ${ !guildId 
         ? 'There was no guildId found in redis. The cmd processor probably fucked up'
         : `Already connected to ${guildId}`

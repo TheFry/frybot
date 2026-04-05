@@ -248,7 +248,7 @@ export class VoiceBot {
     this.eventList.abortBlocks();
     await dequeue(`${this.redis_queueKey}`, -1);
     await this.releaseChannel();
-    delete connectedGuilds[this.channelId];
+    delete connectedGuilds[this.guildId];
     delete voicebotList[this.channelId];
   }
 
