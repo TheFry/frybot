@@ -50,20 +50,25 @@ export function timeConverter(time : string): TimeConverterReturn {
   let hours = '00';
   let minutes = '00';
   let seconds = '00';
-  
-  if(time.length <= 3) {
-    seconds = time.length === 1? '0'+time : time.substring(6, 8);
-  } else if(time.length<=6) {
-    minutes = time.length === 4? '0'+time[3]: time.substring(3,5);
-    seconds = time.substring(0,2);
-  } else if(time.length <= 8) {
-    hours = time.length === 7? '0'+time[0]: time.substring(0, 2);
-    minutes = time.substring(3,5);
-    seconds = time.substring(6, 8);
+
+  const parts = time.split(':');
+  if(parts.length === 1) {
+    // SS or S — seconds only
+    seconds = parts[0].padStart(2, '0');
+  } else if(parts.length === 2) {
+    // MM:SS or M:SS
+    minutes = parts[0].padStart(2, '0');
+    seconds = parts[1].padStart(2, '0');
+  } else if(parts.length >= 3) {
+    // HH:MM:SS or H:MM:SS
+    hours = parts[0].padStart(2, '0');
+    minutes = parts[1].padStart(2, '0');
+    seconds = parts[2].padStart(2, '0');
   }
+
   const str = `${hours}:${minutes}:${seconds}`;
-  const num = parseInt(seconds)+ parseInt(minutes)*60 + parseInt(hours)*60*60;
-  return { str:str, num:num };
+  const num = parseInt(seconds) + parseInt(minutes) * 60 + parseInt(hours) * 60 * 60;
+  return { str, num };
 }
 
 
