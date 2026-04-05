@@ -137,12 +137,9 @@ describe('Message Queue Tests', () => {
       messages.push({ name: `test ${i}`, id: i });
     }
 
-    dequeue(queueKey, count, 2)
-      .then(deqs => {
-        expect(deqs.length).toBe(0);
-      });
+    const deqs = await dequeue(queueKey, count, 2);
+    expect(deqs.length).toBe(0);
 
-    await setTimeoutPromise(5000);
     await enqueue(queueKey, messages);
   }, 10000);
 });

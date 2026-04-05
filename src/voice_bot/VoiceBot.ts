@@ -80,7 +80,7 @@ export class VoiceBot {
     this.channelName = options.channelName;
     this.idleTimeout = options.idleTimeout || 30;  // Default timeout of 5 minutes
     this.audioResources = options.audioResources;
-    this.isConnected = options.isConnected || true;
+    this.isConnected = options.isConnected ?? true;
     this.redis_queueKey = `discord:channel:${this.channelId}:queue`;
     this.resourceLock = new Mutex();
     this.eventList = new List();
