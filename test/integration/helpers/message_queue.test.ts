@@ -2,12 +2,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@je
 import { enqueue, dequeue, EnqueueResponse } from '../../../src/helpers/message_queue';
 import { newClient } from '../../../src/helpers/redis';
 import { setTimeout } from 'timers';
-import { setTimeout as setTimeoutPromise } from 'timers/promises'
+import { setTimeout as setTimeoutPromise } from 'timers/promises';
 import { Redis } from 'ioredis';
 import { hasProperties } from '../../../src/helpers/common';
 
-const messageCases = [1, 3, 5, 10]
-const queueKey = 'test_queue'
+const messageCases = [1, 3, 5, 10];
+const queueKey = 'test_queue';
 const REDIS_URL = process.env['REDIS_URL'] || 'redis://redis.service.consul:6379';
 
 describe('Message Queue Tests', () => {
@@ -26,15 +26,15 @@ describe('Message Queue Tests', () => {
     }
     const res = await enqueue(queueKey, messages);
     res.forEach(response => {
-      expect(hasProperties(response.message, ['id'])).toBe(true)
-      const message = response.message as { [id: string]: number }
+      expect(hasProperties(response.message, ['id'])).toBe(true);
+      const message = response.message as { [id: string]: number };
       expect(response.error).toBeUndefined();
       expect(message).toEqual(messages[message.id]);
-      expect(response.status).toBeDefined;
+      expect(response.status).toBeDefined();
       expect(response.status?.jsonSet).toBe('OK');
       expect(response.status?.listPush).toBe(message.id + 1);
-    })
-  })
+    });
+  });
 
 
   it.each(messageCases)('dequeues %i messages 1 at a time', async count => {
@@ -49,7 +49,7 @@ describe('Message Queue Tests', () => {
       expect(deq.error).toBeUndefined();
       expect(deq.message).toEqual(enq.message);
     }
-  })
+  });
 
   it.each(messageCases)('dequeues %i messages 3 at a time with no timeout', async count => {
     const messages: unknown[] = [];
@@ -60,17 +60,17 @@ describe('Message Queue Tests', () => {
 
     let deqs = await dequeue(queueKey, 3);
     while(deqs.length > 0) {
-      if(deqs.length == 0) break;
+      if(deqs.length === 0) break;
       for(const deq of deqs) {
         const expected = enqs.splice(0, 1)[0];
         expect(expected).toBeDefined();
         expect(deq.error).toBeUndefined();
         expect(deq.message).toEqual(expected?.message);
       }
-      deqs = await dequeue(queueKey, 3)
+      deqs = await dequeue(queueKey, 3);
     }
     expect(enqs.length).toBe(0);
-  })
+  });
 
   it.each(messageCases)('dequeues %i messages 3 at a time with 3s timeout', async count => {
     const messages: unknown[] = [];
@@ -87,11 +87,11 @@ describe('Message Queue Tests', () => {
         expect(deq.error).toBeUndefined();
         expect(deq.message).toEqual(expected?.message);
       }
-      if(enqs.length == 0) break;
+      if(enqs.length === 0) break;
       deqs = await dequeue(queueKey, 3, 3);
     }
     expect(enqs.length).toBe(0);
-  })
+  });
 
   it.each(messageCases)('blocks for new messages and then dequeues %i fresh messages', async count => {
     const messages: unknown[] = [];
@@ -112,7 +112,7 @@ describe('Message Queue Tests', () => {
       expect(deq.error).toBeUndefined();
       expect(deq.message).toEqual(expected?.message);
     }
-  }, 10000)
+  }, 10000);
 
   it('returns error response when JSON is corrupt instead of throwing', async () => {
     await enqueue(queueKey, [{ test: 'data' }]);
@@ -129,7 +129,7 @@ describe('Message Queue Tests', () => {
     } finally {
       spy.mockRestore();
     }
-  })
+  });
 
   it.each(messageCases)('blocks for new messages and times out with no results', async count => {
     const messages: unknown[] = [];
@@ -140,9 +140,9 @@ describe('Message Queue Tests', () => {
     dequeue(queueKey, count, 2)
       .then(deqs => {
         expect(deqs.length).toBe(0);
-      })
+      });
 
     await setTimeoutPromise(5000);
     await enqueue(queueKey, messages);
-  }, 10000)
-})
+  }, 10000);
+});

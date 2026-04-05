@@ -13,7 +13,7 @@ export interface PlaylistEntry {
 
 
 export async function addSong(channelId: Snowflake, songs: PlaylistEntry[], inFront = false): Promise<Array<DiscordResponse>> {
-  const queueKey = `discord:channel:${channelId}:queue`
+  const queueKey = `discord:channel:${channelId}:queue`;
   const responses = await queue.enqueue(queueKey, songs, inFront);
   const discordResponses: DiscordResponse [] = [];
   for(const response of responses) {
@@ -28,7 +28,7 @@ export async function addSong(channelId: Snowflake, songs: PlaylistEntry[], inFr
 
 
 export async function getSong(channelId: Snowflake, timeout = 30): Promise<PlaylistEntry | void> {
-  const queueKey = `discord:channel:${channelId}:queue`
+  const queueKey = `discord:channel:${channelId}:queue`;
   const response = await queue.dequeue(queueKey, 1, timeout);
   if(response.length === 0) return;
 
@@ -38,10 +38,10 @@ export async function getSong(channelId: Snowflake, timeout = 30): Promise<Playl
   }
 
   const missing = hasProperties(response[0].message, ['youtubeVideoId', 'youtubeVideoTitle', 'interactionId'], true) as string[];
-  if(missing.length == 0) {
+  if(missing.length === 0) {
     return response[0].message as PlaylistEntry;
   } else {
-    logConsole({ msg: `Error getting song for channel ${channelId} - Response is missing props ${missing}` })
+    logConsole({ msg: `Error getting song for channel ${channelId} - Response is missing props ${missing}` });
   }
 }
 

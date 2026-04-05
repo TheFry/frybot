@@ -3,7 +3,7 @@ import { YTSearchResult } from './youtube';
 import { LogType, logConsole } from './logger';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class DiscordClient extends Client { commands: any }
+export class DiscordClient extends Client { commands: any; }
 
 
 export interface ChannelEvent {
@@ -39,32 +39,39 @@ function usage(missing: string): void {
 }
 
 export function checkVars(): void {
-  process.env['DC_TOKEN'] || usage('DC_TOKEN'); 
-  process.env['DC_CLIENT'] || usage('DC_CLIENT');
-  process.env['YT_TOKEN'] || usage('YT_TOKEN');
-  process.env['G_ID'] || usage('G_ID');
-  // process.env['MONGO_CONN_STRING'] || usage();
+  if (!process.env['DC_TOKEN']) usage('DC_TOKEN');
+  if (!process.env['DC_CLIENT']) usage('DC_CLIENT');
+  if (!process.env['YT_TOKEN']) usage('YT_TOKEN');
+  if (!process.env['G_ID']) usage('G_ID');
 }
 
 
 export function timeConverter(time : string): TimeConverterReturn {
-  let hours = "00";
-  let minutes = "00";
-  let seconds = "00";
-  
-  if(time.length <= 3) {
-    seconds = time.length == 1? `0`+time : time.substring(6, 8);
-  } else if(time.length<=6) {
-    minutes = time.length == 4? `0`+time[3]: time.substring(3,5);
-    seconds = time.substring(0,2);
-  } else if(time.length <= 8) {
-    hours = time.length == 7? `0`+time[0]: time.substring(0, 2);
-    minutes = time.substring(3,5);
-    seconds = time.substring(6, 8);
+  let hours = '00';
+  let minutes = '00';
+  let seconds = '00';
+
+  const isDigits = (s: string) => /^\d+$/.test(s);
+
+  const parts = time.split(':');
+  if(parts.length === 1 && isDigits(parts[0])) {
+    // SS or S — seconds only
+    seconds = parts[0].padStart(2, '0');
+  } else if(parts.length === 2 && parts.every(isDigits)) {
+    // MM:SS or M:SS
+    minutes = parts[0].padStart(2, '0');
+    seconds = parts[1].padStart(2, '0');
+  } else if(parts.length >= 3 && parts.every(isDigits)) {
+    // HH:MM:SS or H:MM:SS
+    hours = parts[0].padStart(2, '0');
+    minutes = parts[1].padStart(2, '0');
+    seconds = parts[2].padStart(2, '0');
   }
+  // Invalid input falls through, returning the 00:00:00 defaults
+
   const str = `${hours}:${minutes}:${seconds}`;
-  const num = parseInt(seconds)+ parseInt(minutes)*60 + parseInt(hours)*60*60;
-  return { str:str, num:num };
+  const num = Number.parseInt(seconds, 10) + Number.parseInt(minutes, 10) * 60 + Number.parseInt(hours, 10) * 60 * 60;
+  return { str, num };
 }
 
 

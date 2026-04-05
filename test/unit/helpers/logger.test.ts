@@ -20,7 +20,7 @@ describe('logConsole', () => {
 
   it('logs errors when LOG_LEVEL >= 1', () => {
     process.env['LOG_LEVEL'] = '1';
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logConsole, LogType } = require('../../../src/helpers/logger');
     logConsole({ msg: 'test error', type: LogType.Error });
     expect(errorSpy).toHaveBeenCalled();
@@ -28,7 +28,7 @@ describe('logConsole', () => {
 
   it('suppresses warnings when LOG_LEVEL = 1', () => {
     process.env['LOG_LEVEL'] = '1';
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logConsole, LogType } = require('../../../src/helpers/logger');
     logConsole({ msg: 'test warn', type: LogType.Warn });
     expect(warnSpy).not.toHaveBeenCalled();
@@ -36,7 +36,7 @@ describe('logConsole', () => {
 
   it('logs warnings when LOG_LEVEL >= 2', () => {
     process.env['LOG_LEVEL'] = '2';
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logConsole, LogType } = require('../../../src/helpers/logger');
     logConsole({ msg: 'test warn', type: LogType.Warn });
     expect(warnSpy).toHaveBeenCalled();
@@ -44,7 +44,7 @@ describe('logConsole', () => {
 
   it('suppresses debug when LOG_LEVEL = 2', () => {
     process.env['LOG_LEVEL'] = '2';
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logConsole, LogType } = require('../../../src/helpers/logger');
     logConsole({ msg: 'test debug', type: LogType.Debug });
     expect(debugSpy).not.toHaveBeenCalled();
@@ -52,7 +52,7 @@ describe('logConsole', () => {
 
   it('logs debug when LOG_LEVEL >= 3', () => {
     process.env['LOG_LEVEL'] = '3';
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logConsole, LogType } = require('../../../src/helpers/logger');
     logConsole({ msg: 'test debug', type: LogType.Debug });
     expect(debugSpy).toHaveBeenCalled();
@@ -60,7 +60,7 @@ describe('logConsole', () => {
 
   it('defaults to Debug type when type is not specified', () => {
     process.env['LOG_LEVEL'] = '3';
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logConsole } = require('../../../src/helpers/logger');
     logConsole({ msg: 'no type specified' });
     expect(debugSpy).toHaveBeenCalled();
@@ -68,7 +68,7 @@ describe('logConsole', () => {
 
   it('includes timestamp in output', () => {
     process.env['LOG_LEVEL'] = '1';
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logConsole, LogType } = require('../../../src/helpers/logger');
     logConsole({ msg: 'timestamp test', type: LogType.Error });
     const output = errorSpy.mock.calls[0][1] as string;
@@ -80,7 +80,7 @@ describe('logDiscord', () => {
   it('returns early when dcClient is not provided', async () => {
     process.env['LOG_LEVEL'] = '1';
     jest.resetModules();
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logDiscord } = require('../../../src/helpers/logger');
 
     // Should not throw, and not attempt any Discord calls
@@ -90,7 +90,7 @@ describe('logDiscord', () => {
   it('sends message to Discord channel', async () => {
     process.env['LOG_LEVEL'] = '1';
     jest.resetModules();
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logDiscord } = require('../../../src/helpers/logger');
 
     const mockChannel = {
@@ -116,7 +116,7 @@ describe('logDiscord', () => {
   it('falls back to console when channel fetch fails', async () => {
     process.env['LOG_LEVEL'] = '1';
     jest.resetModules();
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logDiscord } = require('../../../src/helpers/logger');
 
     const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -139,7 +139,7 @@ describe('logDiscord', () => {
   it('falls back to console when channel is not text-based', async () => {
     process.env['LOG_LEVEL'] = '1';
     jest.resetModules();
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logDiscord } = require('../../../src/helpers/logger');
 
     const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -165,7 +165,7 @@ describe('logDiscord', () => {
   it('falls back to console when channel.send fails', async () => {
     process.env['LOG_LEVEL'] = '1';
     jest.resetModules();
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logDiscord } = require('../../../src/helpers/logger');
 
     const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -194,7 +194,7 @@ describe('logBoth', () => {
   it('calls both logConsole and logDiscord', async () => {
     process.env['LOG_LEVEL'] = '3';
     jest.resetModules();
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { logBoth } = require('../../../src/helpers/logger');
 
     const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});

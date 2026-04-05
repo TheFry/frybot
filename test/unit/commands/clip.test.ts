@@ -27,7 +27,7 @@ jest.mock('../../../src/helpers/logger', () => ({
   LogType: { Error: 1, Warn: 2, Debug: 3 },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { execute } = require('../../../src/cmd_processor/commands/clip') as {
   execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
 };
@@ -355,7 +355,7 @@ it('loads clip module without DEBUG set (covers false branch of DEBUG ternary)',
   const savedDebug = process.env['DEBUG'];
   delete process.env['DEBUG'];
   jest.isolateModules(() => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     require('../../../src/cmd_processor/commands/clip');
   });
   if (savedDebug !== undefined) process.env['DEBUG'] = savedDebug;

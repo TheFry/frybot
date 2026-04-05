@@ -6,7 +6,7 @@ import { testVideos } from '../../__fixtures__/playlist-entries';
 
 const REDIS_URL = process.env['REDIS_URL'] || 'redis://localhost:6379';
 const CHANNEL_ID = 'test-channel-lol';
-const QUEUE_KEY = `discord:channel:${CHANNEL_ID}:queue`
+const QUEUE_KEY = `discord:channel:${CHANNEL_ID}:queue`;
 
 const testCaseCounts = [1, 3, undefined];
 

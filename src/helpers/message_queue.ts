@@ -42,7 +42,7 @@ export async function enqueue(queueKey: string, messages: unknown[], inFront = f
       continue;
     }
     if(!status) {
-      responses.push({ entryKey, message, error: `Enqueue Error - no response from server for ${entryKey}` })
+      responses.push({ entryKey, message, error: `Enqueue Error - no response from server for ${entryKey}` });
     } else {
       responses.push({ entryKey,  message, status: { jsonSet: status[0], listPush: status[1] } });
     }
@@ -57,7 +57,7 @@ export async function dequeue(queueKey: string, count: number, timeout?: number)
   if(count < 0) {
     try {
       count = await redisClient?.llen(queueKey) || 0;
-    } catch(err) {
+    } catch {
       count = 0;
     }
   }
@@ -89,7 +89,7 @@ export async function dequeue(queueKey: string, count: number, timeout?: number)
       res = await redisClient?.multi()
         .call('JSON.GET', entryKey)
         .del(entryKey)
-        .exec()
+        .exec();
     } catch(err) {
       responses.push({
         uuid: uuid,
@@ -120,12 +120,12 @@ export async function dequeue(queueKey: string, count: number, timeout?: number)
         uuid: uuid,
         message: message,
         error: errorString === '' ? undefined : errorString
-      })
+      });
     } else {
       responses.push({
         uuid: uuid,
         error: 'Dequeue Error - no response from server'
-      })
+      });
     }
     count--;
   }

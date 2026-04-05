@@ -15,5 +15,5 @@ describe('Redis connection tests', () => {
     await redisClient?.set(TEST_KEY, TEST_VALUE);
     expect(await redisClient?.get(TEST_KEY)).toBe(TEST_VALUE);
     await redisClient?.disconnect();
-  })
-})
+  });
+});

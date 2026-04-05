@@ -34,7 +34,7 @@ jest.mock('../../../src/helpers/common', () => ({
   DiscordClient: jest.fn(),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const loadModule = require('../../../src/helpers/load-commands');
 const load = loadModule.default || loadModule;
 
@@ -83,7 +83,7 @@ describe('load-commands', () => {
     process.env['DELETE'] = '1';
     let loadFn: typeof load;
     jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const mod = require('../../../src/helpers/load-commands');
       loadFn = mod.default || mod;
     });
@@ -96,7 +96,7 @@ describe('load-commands', () => {
     process.env['DEPLOY'] = '1';
     let loadFn: typeof load;
     jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const mod = require('../../../src/helpers/load-commands');
       loadFn = mod.default || mod;
     });
@@ -110,7 +110,7 @@ describe('load-commands', () => {
     process.env['GLOBAL'] = '1';
     let loadFn: typeof load;
     jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const mod = require('../../../src/helpers/load-commands');
       loadFn = mod.default || mod;
     });
@@ -129,7 +129,7 @@ describe('load-commands', () => {
       // Require common first so we get the same mock instance load-commands will use
       const common = require('../../../src/helpers/common') as { hasProperties: ReturnType<typeof jest.fn> };
       hasPropertiesMock = common.hasProperties;
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const mod = require('../../../src/helpers/load-commands');
       loadFn = mod.default || mod;
     });

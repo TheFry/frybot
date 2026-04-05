@@ -1,18 +1,18 @@
 import ffmpeg from 'fluent-ffmpeg';
 import { randomBytes } from 'crypto';
-import { INTERACTION_QUEUE_KEY, ClipJob, MEDIA_DIR } from "../helpers/common";
-import { enqueue } from "../helpers/message_queue";
+import { INTERACTION_QUEUE_KEY, ClipJob, MEDIA_DIR } from '../helpers/common';
+import { enqueue } from '../helpers/message_queue';
 import * as yt from '../helpers/youtube';
-import { DiscordResponse } from "../helpers/interactions";
-import { rmSync } from "fs";
-import { LogType, logConsole } from "../helpers/logger";
+import { DiscordResponse } from '../helpers/interactions';
+import { rmSync } from 'fs';
+import { LogType, logConsole } from '../helpers/logger';
 
 export async function clip(job: ClipJob) {
   const rawPath = `${MEDIA_DIR}/${randomBytes(8).toString('base64url')}`;
   const outputPath = `${MEDIA_DIR}/${randomBytes(8).toString('base64url')}.mp3`;
   const ytStream = await yt.download(job.video.id, rawPath);
 
-  logConsole({ msg: `Processing clip job interactionId=${job.interactionId} videoId=${job.video.id} startTime=${job.startTime} duration=${job.duration}` })
+  logConsole({ msg: `Processing clip job interactionId=${job.interactionId} videoId=${job.video.id} startTime=${job.startTime} duration=${job.duration}` });
   ffmpeg(ytStream)
     .setStartTime(job.startTime)
     .setDuration(job.duration)
@@ -23,7 +23,7 @@ export async function clip(job: ClipJob) {
         content: 'Here is your file',
         files: [outputPath],
         interactionId: job.interactionId,
-      }
+      };
       await enqueue(INTERACTION_QUEUE_KEY, [message]);
       rmSync(`${rawPath}.mp3`, { force: true });
     })
@@ -32,7 +32,7 @@ export async function clip(job: ClipJob) {
       const message: DiscordResponse = {
         content: 'Error trimming file.',
         interactionId: job.interactionId,
-      }
+      };
       await enqueue(INTERACTION_QUEUE_KEY, [message]);
       try {
         rmSync(outputPath, { force: true });

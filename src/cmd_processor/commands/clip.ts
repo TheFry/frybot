@@ -19,7 +19,7 @@ import { randomBytes } from 'crypto';
 import { logConsole, LogType } from '../../helpers/logger';
 
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
-const DEBUG = process.env['DEBUG'] === "1" ? true : false;
+const DEBUG = process.env['DEBUG'] === '1';
 const MODAL_TITLE_LENGTH = 45;
 
 interface ModalData {
@@ -48,27 +48,27 @@ async function getModalData(interaction: ButtonInteraction, videoData: yt.YTSear
     .setLabel('Video Link (Defaults to selection)')
     .setValue(`https://www.youtube.com/watch?v=${videoData.id}`)
     .setStyle(TextInputStyle.Paragraph)
-    .setRequired(true)
+    .setRequired(true);
 
   const startTimeInput = new TextInputBuilder()
     .setCustomId(startTimeId)
     .setLabel('Enter trim start time with format HH:MM:SS')
     .setValue('00:00:00')
     .setStyle(TextInputStyle.Short)
-    .setRequired(true)
+    .setRequired(true);
 
   const durationInput = new TextInputBuilder()
     .setCustomId(durationId)
     .setLabel('Enter clip duration in seconds')
     .setValue('5')
     .setStyle(TextInputStyle.Short)
-    .setRequired(true)
+    .setRequired(true);
 
   modal.addComponents(
     new ActionRowBuilder<TextInputBuilder>().addComponents(linkInput), 
     new ActionRowBuilder<TextInputBuilder>().addComponents(startTimeInput), 
     new ActionRowBuilder<TextInputBuilder>().addComponents(durationInput)
-  )
+  );
   
   const modalFilter = (interaction: ModalSubmitInteraction) => interaction.customId === modalId; 
   let submission: ModalMessageModalSubmitInteraction;
@@ -76,7 +76,7 @@ async function getModalData(interaction: ButtonInteraction, videoData: yt.YTSear
   try {
     submission = await interaction.awaitModalSubmit({ time: 600_000, filter: modalFilter }) as ModalMessageModalSubmitInteraction;
     addInteraction(submission);
-  } catch(err) {
+  } catch {
     interaction.editReply({ content: 'Timeout waiting for input', components: [] });
     return null;
   }
@@ -101,18 +101,18 @@ async function getSelection(interaction: ChatInputCommandInteraction, query: str
   const rows: ActionRowBuilder<ButtonBuilder> [] = [];
   rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId(`select`)
-      .setLabel(`Select Video`)
+      .setCustomId('select')
+      .setLabel('Select Video')
       .setStyle(ButtonStyle.Success),
 
     new ButtonBuilder()
-      .setCustomId(`next`)
-      .setLabel(`Next Video`)
+      .setCustomId('next')
+      .setLabel('Next Video')
       .setStyle(ButtonStyle.Secondary),
 
     new ButtonBuilder()
-      .setCustomId(`cancel`)
-      .setLabel(`Cancel`)
+      .setCustomId('cancel')
+      .setLabel('Cancel')
       .setStyle(ButtonStyle.Danger)
   ));
   
@@ -122,22 +122,22 @@ async function getSelection(interaction: ChatInputCommandInteraction, query: str
   for(let i = 0; i < searchData.length; i++) {
     try {
       button = await message.awaitMessageComponent({ time: 120_000, componentType: ComponentType.Button });
-      if(button.customId == "next"){
+      if(button.customId === 'next'){
         if(i + 1 < searchData.length) {
           await button.update({ content: `https://www.youtube.com/watch?v=${searchData[i + 1].id}`, components: rows });
         } else {
           await interaction.editReply({ content: 'No video selected. Try a different search or use a direct url', components: [] });
           return null;
         }
-      } else if(button.customId == "select") {
+      } else if(button.customId === 'select') {
         selectedVideo = searchData[i]; 
         break;
       } else {
         await interaction.editReply({ content: '#cancelled', components: [] });
         return null;
       }
-    } catch(err) {
-      await interaction.editReply({ content: 'Timeout waiting for input', components: [] })
+    } catch {
+      await interaction.editReply({ content: 'Timeout waiting for input', components: [] });
       return null;
     }
   }
@@ -161,17 +161,17 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
       id: url.searchParams.get('v') as string,
       name: q,
       type: 'video'
-    }
+    };
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
-        .setCustomId(`select`)
-        .setLabel(`Select`)
+        .setCustomId('select')
+        .setLabel('Select')
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId(`cancel`)
-        .setLabel(`Cancel`)
+        .setCustomId('cancel')
+        .setLabel('Cancel')
         .setStyle(ButtonStyle.Danger)
-    )
+    );
     const message = await interaction.reply({content: `https://youtube.com/watch?v=${selection.id}`, components: [row]});
     modalInteraction = await message.awaitMessageComponent({ time: 120_000, componentType: ComponentType.Button });
     if(modalInteraction.customId === 'cancel') {
@@ -181,7 +181,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
   } catch(err) {
     let checkedErr;
     if(hasProperties(err, ['code'])) {
-      checkedErr = err as { [code: string]: string }
+      checkedErr = err as { [code: string]: string };
     }
     
     if(checkedErr && checkedErr.code === 'ERR_INVALID_URL') {
@@ -195,7 +195,7 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
     }
   }
 
-  await interaction.editReply({ content: `Editing ${selection?.name}`, components: [] })
+  await interaction.editReply({ content: `Editing ${selection?.name}`, components: [] });
   const modalData = await getModalData(modalInteraction, selection);
   if(!modalData) return;
   const job: ClipJob = {
@@ -203,13 +203,13 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
     startTime: modalData.startTime.str,
     duration: modalData.duration,
     interactionId: modalData.interaction.id
-  }
+  };
   
-  const res = (await enqueue(CLIP_QUEUE_KEY, [job]))[0]
+  const res = (await enqueue(CLIP_QUEUE_KEY, [job]))[0];
   if(res) {
     if(res.error || res.status?.jsonSet !== 'OK') {
       logConsole({ msg: `Error adding clip job - ${JSON.stringify(res)}}`, type: LogType.Error });
-      await modalData.interaction.editReply(`Failed adding clip job to the processing queue.`);
+      await modalData.interaction.editReply('Failed adding clip job to the processing queue.');
     }
   }
 }
@@ -222,6 +222,6 @@ const command = new SlashCommandBuilder()
     option.setName('query')
       .setDescription('Youtube search query OR video url')
       .setRequired(true)
-  )
+  );
 
 module.exports = { data: command, execute };

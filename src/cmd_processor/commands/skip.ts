@@ -2,12 +2,12 @@ import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'd
 import { redisClient } from '../../helpers/redis';
 import { ChannelEvent, CHANNEL_EVENT_KEY } from '../../helpers/common';
 
-const DEBUG = process.env['DEBUG'] === "1" ? true : false;
+const DEBUG = process.env['DEBUG'] === '1';
 async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.reply('Skipping Song');
   const member = interaction.member as GuildMember;
   if(!member.voice.channelId) {
-    interaction.editReply(`You need to be in a voice channel to run this command`);
+    interaction.editReply('You need to be in a voice channel to run this command');
     return;
   }
 
@@ -20,6 +20,6 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
 
 const command = new SlashCommandBuilder()
   .setName(`${DEBUG ? 'dev-skip' : 'skip'}`)
-  .setDescription('Skip to the next track')
+  .setDescription('Skip to the next track');
 
 module.exports = { data: command, execute };

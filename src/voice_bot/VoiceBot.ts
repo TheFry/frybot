@@ -109,7 +109,7 @@ export class VoiceBot {
       idleTimeout: options.idleTimeout,
       audioResources: audioResources,
       isConnected: true
-    })
+    });
 
     await bot.addPlayerHandlers();
     return bot;
@@ -147,8 +147,8 @@ export class VoiceBot {
   async releaseChannel(markFree = false) {
     const redis_watchedKey = 'frybot:reserved-channels';
     const redis_freeKey = 'frybot:free-channels';
-    await redisClient?.srem(redis_watchedKey, this.channelId)
-    if(markFree) await redisClient?.rpush(redis_freeKey, this.channelId)
+    await redisClient?.srem(redis_watchedKey, this.channelId);
+    if(markFree) await redisClient?.rpush(redis_freeKey, this.channelId);
   }
 
 
@@ -156,7 +156,7 @@ export class VoiceBot {
     this.audioResources.player.on('error', err => {
       logConsole({ msg: `Audio Player error channel ${this.channelId}`, type: LogType.Error });
       logConsole({ msg: `${err}`, type: LogType.Error });
-    })
+    });
 
     this.audioResources.player.on(AudioPlayerStatus.Idle, async (oldSate) => {
       switch(oldSate.status) {
@@ -179,7 +179,7 @@ export class VoiceBot {
         case AudioPlayerStatus.Buffering:
           logConsole({ msg: 'Was buffering or something', type: LogType.Error });
       }
-    })
+    });
   }
 
 
@@ -256,18 +256,18 @@ export class VoiceBot {
   async pause(unpause = false) {
     const currentState = this.audioResources.player.state.status;
     let status;
-    if(unpause && currentState == AudioPlayerStatus.Paused) {
+    if(unpause && currentState === AudioPlayerStatus.Paused) {
       status = this.audioResources.player.unpause();
-    } else if(!unpause && currentState == AudioPlayerStatus.Playing) {
+    } else if(!unpause && currentState === AudioPlayerStatus.Playing) {
       status = this.audioResources.player.pause();
     }
     
     if(!status) { 
-      const msg = `Error ${unpause ? 'unpausing' : 'pausing'} the queue`
-      logConsole({ msg: `Channel ${this.channelId} - ${msg}`, type: LogType.Error }) 
+      const msg = `Error ${unpause ? 'unpausing' : 'pausing'} the queue`;
+      logConsole({ msg: `Channel ${this.channelId} - ${msg}`, type: LogType.Error }); 
     } else {
-      const msg = `Queue is ${unpause ? 'unpaused' : 'paused'}`
-      logConsole({ msg: `Channel ${this.channelId} - ${msg}`, type: LogType.Debug }) 
+      const msg = `Queue is ${unpause ? 'unpaused' : 'paused'}`;
+      logConsole({ msg: `Channel ${this.channelId} - ${msg}`, type: LogType.Debug }); 
     }
   }
 
@@ -277,7 +277,7 @@ export class VoiceBot {
     } else if(this.lastPlayed) {
       addSong(this.channelId, [ this.lastPlayed ], true);
     } else {
-      logConsole({ msg: "Error: Could not replay. No now playing or last played vars are set!", type: LogType.Error })
+      logConsole({ msg: 'Error: Could not replay. No now playing or last played vars are set!', type: LogType.Error });
     }
   }
 
@@ -296,7 +296,7 @@ export class VoiceBot {
       if(channel) channel.destroy();
       if(fs.existsSync(`./${this.guildId}`)) fs.rmSync(`./${this.guildId}`);
     } catch(err) {
-      logConsole({ msg: `Cleanup error for guild ${this.guildId} - ${err}`, type: LogType.Error })
+      logConsole({ msg: `Cleanup error for guild ${this.guildId} - ${err}`, type: LogType.Error });
     }
   }
 
@@ -321,7 +321,7 @@ export class VoiceBot {
           await this.pause(true);
           break;
         case 'replay':
-          await this.replay()
+          await this.replay();
           break;
       }
     }

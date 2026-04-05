@@ -20,7 +20,7 @@ jest.mock('../../../src/helpers/redis', () => ({
   newClient: jest.fn(),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { enqueue, dequeue } = require('../../../src/helpers/message_queue') as typeof import('../../../src/helpers/message_queue');
 
 describe('message_queue unit', () => {

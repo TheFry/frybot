@@ -54,11 +54,11 @@ describe('hasProperties', () => {
       props: ['prop1', 'prop2.level1', 'prop3.level1.level2'],
       expected: ['prop2.level1']
     }
-  ]
+  ];
 
   it.each(propCases)('check for properties $props on obj $obj', ({ obj, props, expected }) => {
     expect(hasProperties(obj, props, true)).toEqual(expected);
-    expect(hasProperties(obj, props)).toBe(expected.length === 0 ? true : false)
+    expect(hasProperties(obj, props)).toBe(expected.length === 0);
   });
 
   it('accepts a single string property', () => {
@@ -69,19 +69,22 @@ describe('hasProperties', () => {
 
 
 describe('timeConverter', () => {
-  it('converts single digit seconds', () => {
+  it('converts single digit seconds (S format)', () => {
     expect(timeConverter('5')).toEqual({ str: '00:00:05', num: 5 });
     expect(timeConverter('0')).toEqual({ str: '00:00:00', num: 0 });
   });
 
-  it('handles 2-3 char string (length <= 3, length != 1 branch)', () => {
-    // length 2: hits false branch of `time.length == 1` ternary
-    const result = timeConverter('30');
-    expect(result).toHaveProperty('str');
-    expect(result).toHaveProperty('num');
+  it('converts two-digit seconds (SS format)', () => {
+    expect(timeConverter('30')).toEqual({ str: '00:00:30', num: 30 });
+    expect(timeConverter('59')).toEqual({ str: '00:00:59', num: 59 });
   });
 
-  it('converts full HH:MM:SS format (8 chars)', () => {
+  it('converts MM:SS format', () => {
+    expect(timeConverter('30:45')).toEqual({ str: '00:30:45', num: 1845 });
+    expect(timeConverter('1:30')).toEqual({ str: '00:01:30', num: 90 });
+  });
+
+  it('converts full HH:MM:SS format', () => {
     expect(timeConverter('01:30:00')).toEqual({ str: '01:30:00', num: 5400 });
     expect(timeConverter('00:01:30')).toEqual({ str: '00:01:30', num: 90 });
     expect(timeConverter('00:00:05')).toEqual({ str: '00:00:05', num: 5 });
@@ -89,42 +92,18 @@ describe('timeConverter', () => {
     expect(timeConverter('02:15:30')).toEqual({ str: '02:15:30', num: 8130 });
   });
 
-  it('converts 7-char H:MM:SS format (length == 7 true branch)', () => {
-    // length 7: `time.length == 7` is true → hours = '0'+time[0]
-    const result = timeConverter('1:30:00');
-    expect(result).toHaveProperty('str');
-    expect(result).toHaveProperty('num');
+  it('converts H:MM:SS format (single-digit hours)', () => {
+    expect(timeConverter('1:30:00')).toEqual({ str: '01:30:00', num: 5400 });
+    expect(timeConverter('9:59:59')).toEqual({ str: '09:59:59', num: 36000 - 1 });
   });
 
-  it('converts 4-char SSMM format (length <= 6 branch)', () => {
-    // 4 chars: seconds in first 2 chars, minutes[3] is single digit → '0'+time[3]
-    const result = timeConverter('3045');
-    expect(result).toHaveProperty('str');
-    expect(result).toHaveProperty('num');
-    expect(typeof result.str).toBe('string');
-  });
-
-  it('converts 5-6 char format (length <= 6 branch, length != 4)', () => {
-    // 5 chars: seconds = substring(0,2), minutes = substring(3,5)
-    const result = timeConverter('30:45');
-    expect(result).toHaveProperty('str');
-    expect(result).toHaveProperty('num');
-    expect(typeof result.num).toBe('number');
-  });
-
-  it('returns an object with str and num properties', () => {
-    const result = timeConverter('00:00:00');
-    expect(result).toHaveProperty('str');
-    expect(result).toHaveProperty('num');
-    expect(typeof result.str).toBe('string');
-    expect(typeof result.num).toBe('number');
-  });
-
-  it('falls through all branches for strings longer than 8 chars (line 60 false branch)', () => {
-    // length > 8 → none of the if/else-if conditions match → defaults apply
-    const result = timeConverter('01:30:00A');
-    expect(result).toHaveProperty('str');
-    expect(result).toHaveProperty('num');
+  it('returns 00:00:00 fallback for non-numeric input', () => {
+    // Non-digit segments must not produce NaN in num (which would be passed to ffmpeg)
+    const fallback = { str: '00:00:00', num: 0 };
+    expect(timeConverter('abc')).toEqual(fallback);
+    expect(timeConverter('00:00:0x')).toEqual(fallback);
+    expect(timeConverter('1:30:xx')).toEqual(fallback);
+    expect(timeConverter('')).toEqual(fallback);
   });
 });
 

@@ -17,7 +17,7 @@ jest.mock('../../src/helpers/youtube', () => ({
   search: jest.fn().mockResolvedValue(mockYTSearchResults as never),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { execute } = require('../../src/cmd_processor/commands/play') as {
   execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
 };

@@ -19,7 +19,7 @@ client.login(DC_TOKEN)
   .catch((err) => { 
     logConsole({ msg: `${err}`, type: LogType.Error });
     process.exit(1);
-  })
+  });
 
 
 client.once('clientReady', async () => {
@@ -57,7 +57,7 @@ client.on('interactionCreate', async (interaction: Interaction) => {
       logConsole({ msg: `Error trying to send error ??? - ${err}`, type: LogType.Error });
     }
   }
-})
+});
 
 
 async function respond() {
@@ -71,7 +71,7 @@ async function respond() {
     }
 
     if(!res.message) {
-      logConsole({ msg: `Error dequeueing from interaction queue - no message object`, type: LogType.Error });
+      logConsole({ msg: 'Error dequeueing from interaction queue - no message object', type: LogType.Error });
       continue;
     }
 
@@ -90,7 +90,7 @@ async function respond() {
             await interaction.editReply({ content: content ? content : '', files: files ? files : [] });
           }
         } catch(err) {
-          logConsole({ msg: `Interaction Reply error - ${err}`, type: LogType.Error })
+          logConsole({ msg: `Interaction Reply error - ${err}`, type: LogType.Error });
           continue;
         }
         
@@ -98,11 +98,11 @@ async function respond() {
         if(files !== undefined) {
           files.forEach(file => {
             try {
-              rmSync(file)
+              rmSync(file);
             } catch { 
               // TODO: handle failed file deletion
             }
-          })
+          });
         }
       } else {
         logConsole({ msg: `Didn't handle interaction type ${interaction.type}`, type: LogType.Warn });

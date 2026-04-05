@@ -6,16 +6,16 @@ import { ActionRowBuilder,
   ModalSubmitInteraction,
   SlashCommandBuilder,
   TextInputBuilder,
-  TextInputStyle } from "discord.js";
+  TextInputStyle } from 'discord.js';
   
-import { randomBytes } from "crypto";
+import { randomBytes } from 'crypto';
 import * as yt from '../../helpers/youtube';
-import { redisClient } from "../../helpers/redis";
-import { addSong } from "../../helpers/playlist";
-import { FREE_CHANNELS_KEY, WATCHED_CHANNELS_KEY } from "../../helpers/common";
-import { LogType, logConsole } from "../../helpers/logger";
+import { redisClient } from '../../helpers/redis';
+import { addSong } from '../../helpers/playlist';
+import { FREE_CHANNELS_KEY, WATCHED_CHANNELS_KEY } from '../../helpers/common';
+import { LogType, logConsole } from '../../helpers/logger';
 
-const DEBUG = process.env["DEBUG"] === "1" ? true : false;
+const DEBUG = process.env['DEBUG'] === '1';
 const YT_TOKEN = process.env['YT_TOKEN'] as string;
 
 async function getModalData(interaction: ChatInputCommandInteraction): Promise<[string [], ModalMessageModalSubmitInteraction | null]> {
@@ -30,11 +30,11 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<[
     .setLabel('Youtube Links (One per line)')
     .setStyle(TextInputStyle.Paragraph)
     .setRequired(true)
-    .setCustomId(linksId)
+    .setCustomId(linksId);
 
   modal.addComponents(
     new ActionRowBuilder<TextInputBuilder>().addComponents(linkInput)
-  )
+  );
   
   const modalFilter = (interaction: ModalSubmitInteraction) => interaction.customId === modalId; 
   let submission: ModalMessageModalSubmitInteraction;
@@ -59,7 +59,7 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<[
     if(url && url.hostname === 'www.youtube.com' && url.pathname === '/watch' && url.searchParams.get('v')) return true;
     badLinks.push(link);
     return false;
-  })
+  });
 
   let reply: string;
   if(badLinks.length !== 0 && links.length > 0) {
@@ -67,7 +67,7 @@ async function getModalData(interaction: ChatInputCommandInteraction): Promise<[
   } else if(links.length === 0) {
     reply = 'No valid links provided';
   } else {
-    reply = 'Adding songs...'
+    reply = 'Adding songs...';
   }
 
   await submission.editReply(reply);
@@ -106,6 +106,6 @@ async function execute(interaction: ChatInputCommandInteraction): Promise<void> 
 
 const command = new SlashCommandBuilder()
   .setName(`${DEBUG ? 'dev-play-many' : 'play-many'}`)
-  .setDescription('Play audio from a list of youtube links')
+  .setDescription('Play audio from a list of youtube links');
 
 module.exports = { data: command, execute };

@@ -16,7 +16,7 @@ client.login(DC_TOKEN)
   .catch((err) => {
     logConsole({ msg: `${err}`, type: LogType.Error });
     process.exit(1);
-  })
+  });
 
 
 client.once('clientReady', async () => {
@@ -29,15 +29,15 @@ client.once('clientReady', async () => {
 
 // Watch redis for open queues. Try to reserve one
 async function reserveChannels(redisClient: Redis) {
-  logConsole({ msg: `Looking for open channels...` });
+  logConsole({ msg: 'Looking for open channels...' });
   const coolDown = 5000; // How long to wait before looking for a new queue after failure
 
   const releaseChannel = async(channelId: Snowflake) => {
     await redisClient.multi()
       .srem(WATCHED_CHANNELS_KEY, channelId)
       .rpush(FREE_CHANNELS_KEY, channelId)
-      .exec()
-  }
+      .exec();
+  };
 
   const initChannel = async(channelId: Snowflake) => {
     const guildId = await redisClient.get(`discord:channel:${channelId}:guild-id`);
@@ -45,7 +45,7 @@ async function reserveChannels(redisClient: Redis) {
       const errText = `Can't watch ${channelId} - ${ !guildId 
         ? 'There was no guildId found in redis. The cmd processor probably fucked up'
         : `Already connected to ${guildId}`
-      }`
+      }`;
       logConsole({ msg: `${errText}`, type: LogType.Error });
       await releaseChannel(channelId);
       await setTimeout(coolDown);
@@ -58,7 +58,7 @@ async function reserveChannels(redisClient: Redis) {
         guildId,
         idleTimeout: 600,
         voiceAdapter: (await client.guilds.fetch(guildId)).voiceAdapterCreator
-       })
+       });
     } catch(err) {
       logConsole({ msg: `Error creating VoiceBot - ${err}`, type: LogType.Error });
       await releaseChannel(channelId);
@@ -83,9 +83,9 @@ async function reserveChannels(redisClient: Redis) {
     bot.readyForEvents = true;
     bot.processEvents();
     logConsole({ msg: `Success! Watching channel ${channelId}` });
-    await redisClient.setnx(`discord:channel:${channelId}:bot-id`, client.application?.id as string)
+    await redisClient.setnx(`discord:channel:${channelId}:bot-id`, client.application?.id as string);
     return 0;
-  }
+  };
 
   // Init channels already in redis we're assigned to
   const watched = await redisClient.smembers(WATCHED_CHANNELS_KEY);
@@ -147,8 +147,8 @@ async function watchChannelEvents(redisClient: Redis) {
     let event: ChannelEvent;
     try {
       event = JSON.parse(message) as ChannelEvent;
-    } catch(err) {
-      logConsole({ msg: `Channel event subscriber error - failed to parse message`, type: LogType.Warn });
+    } catch {
+      logConsole({ msg: 'Channel event subscriber error - failed to parse message', type: LogType.Warn });
       return;
     }
 
@@ -163,9 +163,9 @@ async function watchChannelEvents(redisClient: Redis) {
     if(bot !== undefined && bot.readyForEvents) {
       bot.eventList.lpush(event);
     }
-  })
+  });
 
   subscriber.on('error', (err) => {
     logConsole({ msg: `Channel event subscriber error - ${err}`, type: LogType.Error });
-  })
+  });
 }

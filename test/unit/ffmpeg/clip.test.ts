@@ -40,7 +40,7 @@ jest.mock('../../../src/helpers/logger', () => ({
   LogType: { Error: 1, Warn: 2, Debug: 3 },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { clip, validateClipJob } = require('../../../src/ffmpeg/clip') as {
   clip: (job: ClipJob) => Promise<void>;
   validateClipJob: (message: unknown) => boolean;

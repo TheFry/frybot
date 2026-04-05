@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { ChatInputCommandInteraction } from 'discord.js';
 import { Redis } from 'ioredis';
 import { newClient } from '../../src/helpers/redis';
@@ -9,7 +9,7 @@ const REDIS_URL = process.env['REDIS_URL'] || 'redis://localhost:6379';
 const TEST_CHANNEL_ID = 'e2e-test-channel-events';
 
 // Use real Redis for publishing
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const skipCommand = require('../../src/cmd_processor/commands/skip') as {
   execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
 };

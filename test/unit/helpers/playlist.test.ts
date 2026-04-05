@@ -19,7 +19,7 @@ jest.mock('../../../src/helpers/logger', () => ({
   LogType: { Error: 1, Warn: 2, Debug: 3 },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { addSong, getSong, getBotId } = require('../../../src/helpers/playlist') as typeof import('../../../src/helpers/playlist');
 
 describe('playlist', () => {
